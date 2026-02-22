@@ -79,7 +79,7 @@ async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm') {
   if (convertedPath) fs.unlink(convertedPath, () => {});
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o-audio-preview',
+    model: process.env.OPENAI_AUDIO_MODEL || 'gpt-audio',
     modalities: ['text'],
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
