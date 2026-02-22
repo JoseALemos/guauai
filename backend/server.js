@@ -2,12 +2,19 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// Rate limiting
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: { error: 'Demasiadas peticiones. Intenta en 15 minutos.' } });
+const audioLimiter = rateLimit({ windowMs: 60 * 1000, max: 6, message: { error: 'Máximo 6 análisis por minuto.' } });
+app.use('/api/', apiLimiter);
+app.use('/api/audio/', audioLimiter);
 
 // Servir frontend estático (en Docker: /app/frontend/, en dev: ../frontend/)
 const frontendPath = path.join(__dirname, 'frontend');

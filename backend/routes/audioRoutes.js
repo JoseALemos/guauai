@@ -107,6 +107,21 @@ router.post('/analyze-base64', express.json({ limit: '15mb' }), optionalToken, a
       try {
         const { checkForAlerts } = require('../services/alertService');
         alert = await checkForAlerts(req.user.userId, dog_id || null, result.analysis || {});
+
+        // Email si alerta crítica
+        if (alert?.level === 'high') {
+          const pool = require('../db/pool');
+          const userRow = await pool.query('SELECT email FROM users WHERE id=$1', [req.user.userId]);
+          const { sendBehaviorAlert } = require('../services/emailAlertService');
+          sendBehaviorAlert({
+            toEmail: userRow.rows[0]?.email,
+            dogName: dog_name || 'Tu perro',
+            emotion: result.analysis?.estado_emocional,
+            message: result.analysis?.mensaje_interpretado,
+            recommendation: result.analysis?.recomendacion_dueno,
+            shareUrl: `${process.env.APP_URL || 'https://dogspeak-production.up.railway.app'}/share/${response.id}`,
+          }).catch(() => {});
+        }
       } catch {}
     }
 

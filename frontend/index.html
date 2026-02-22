@@ -322,6 +322,7 @@
   <h1>Guau<span>AI</span></h1>
   <p>Entiende lo que dice tu perro con IA</p>
 </header>
+<div id="authBanner" style="background:#111118;border-bottom:1px solid #1e1e30;padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;font-size:.85rem;color:#64748b;gap:.75rem;flex-wrap:wrap"></div>
 
 <main class="main">
 
@@ -330,6 +331,8 @@
     <div class="profile-row">
       <input type="text" id="dogName" placeholder="🐶 Nombre del perro" maxlength="30"/>
       <input type="text" id="dogBreed" placeholder="Raza (opcional)" maxlength="30"/>
+    </div>
+    <select id="dogSelector" style="display:none;width:100%;margin-top:.5rem;padding:.6rem .875rem;background:#1a1a2e;border:1px solid #222230;border-radius:10px;color:#f0f0f5;font-size:.875rem"></select>
     </div>
 
     <!-- RECORDER -->
@@ -546,15 +549,20 @@ analyzeBtn.addEventListener('click', async () => {
     reader.readAsDataURL(recordedBlob);
     reader.onloadend = async () => {
       const base64 = reader.result.split(',')[1];
+      const selectedDogId = document.getElementById('dogSelector')?.value || null;
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
       const res = await fetch(`${API_BASE}/audio/analyze-base64`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           audio_base64: base64,
           mime_type: 'audio/webm',
           lang: LANG,
           dog_name: document.getElementById('dogName').value || 'Mi perro',
-          dog_breed: document.getElementById('dogBreed').value || null
+          dog_breed: document.getElementById('dogBreed').value || null,
+          dog_id: selectedDogId || undefined,
         })
       });
 
@@ -728,6 +736,65 @@ window.addEventListener('appinstalled', () => {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+
+// ── AUTH INTEGRATION ──────────────────────────────────────────────────────────
+const authToken = localStorage.getItem('guauai_token');
+let currentUserId = null;
+
+async function initAuthBanner() {
+  const banner = document.getElementById('authBanner');
+  if (!banner) return;
+  if (authToken) {
+    try {
+      const r = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${authToken}` } });
+      if (r.ok) {
+        const u = await r.json();
+        currentUserId = u.id;
+        banner.innerHTML = `<span>👋 ${u.name || u.email}</span><a href="/dashboard" style="color:var(--accent2);font-weight:700;text-decoration:none">Ir al dashboard →</a>`;
+        banner.style.background = '#0d0d1a';
+        // cargar perros del usuario para el selector
+        loadUserDogs();
+        return;
+      }
+    } catch {}
+  }
+  banner.innerHTML = `<span>Guarda tu historial y estadísticas</span><a href="/dashboard" style="background:var(--accent);color:white;padding:.35rem .9rem;border-radius:8px;font-weight:700;text-decoration:none;font-size:.8rem">Crear cuenta gratis →</a>`;
+}
+
+async function loadUserDogs() {
+  if (!authToken) return;
+  try {
+    const r = await fetch(`${API_BASE}/dogs`, { headers: { Authorization: `Bearer ${authToken}` } });
+    if (!r.ok) return;
+    const dogs = await r.json();
+    const sel = document.getElementById('dogSelector');
+    if (!sel || !dogs.length) return;
+    sel.innerHTML = '<option value="">Sin perro asociado</option>' + dogs.map(d => `<option value="${d.id}" data-breed="${d.breed||''}">${d.name}${d.breed ? ' (' + d.breed + ')' : ''}</option>`).join('');
+    sel.style.display = 'block';
+    sel.addEventListener('change', () => {
+      const opt = sel.options[sel.selectedIndex];
+      if (opt.value) {
+        document.getElementById('dogName').value = opt.text.split(' (')[0];
+        document.getElementById('dogBreed').value = opt.dataset.breed || '';
+      }
+    });
+  } catch {}
+}
+
+// Guardar análisis en DB si hay sesión
+async function saveAnalysisToDB(dogId, analysisData) {
+  if (!authToken) return;
+  const a = analysisData.analysis;
+  const body = {
+    audio_base64: '__saved__', mime_type: 'audio/mp3',
+    dog_id: dogId || undefined,
+    dog_name: document.getElementById('dogName')?.value,
+    dog_breed: document.getElementById('dogBreed')?.value,
+  };
+  // El endpoint ya guarda automáticamente si hay auth header — se pasa en el fetch principal
+}
+
+initAuthBanner();
 </script>
 </body>
 </html>
