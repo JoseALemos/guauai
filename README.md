@@ -5,7 +5,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://dogspeak-production.up.railway.app)
-[![Built with GPT-4o Audio](https://img.shields.io/badge/Powered%20by-gpt--audio-412991)](https://openai.com)
+[![Dashboard](https://img.shields.io/badge/Dashboard-Live-blueviolet)](https://dogspeak-production.up.railway.app/dashboard)
+[![Built with gpt-audio](https://img.shields.io/badge/Powered%20by-gpt--audio-412991)](https://openai.com)
 [![Made by Ainertia](https://img.shields.io/badge/Made%20by-Ainertia%20Capital-00C896)](https://ainertia.ai)
 [![Stars](https://img.shields.io/github/stars/JoseALemos/guauai?style=social)](https://github.com/JoseALemos/guauai)
 
@@ -30,7 +31,10 @@ Graba cualquier sonido de tu perro — ladrido, gemido, gruñido, aullido — y 
 
 ## 🚀 Demo en vivo
 
-👉 **[guauai.ainertia.ai](https://dogspeak-production.up.railway.app)**
+| URL | Descripción |
+|---|---|
+| 👉 [Analizador](https://dogspeak-production.up.railway.app) | App web — graba y analiza al instante |
+| 📊 [Dashboard](https://dogspeak-production.up.railway.app/dashboard) | Panel completo con perfiles, historial y gráficas |
 
 ---
 
@@ -40,7 +44,7 @@ Graba cualquier sonido de tu perro — ladrido, gemido, gruñido, aullido — y 
 git clone https://github.com/JoseALemos/guauai.git
 cd guauai/backend
 npm install
-cp .env.example .env        # añade tu OPENAI_API_KEY
+cp .env.example .env        # añade OPENAI_API_KEY y opcionalmente DATABASE_URL
 node server.js
 # → http://localhost:3001
 ```
@@ -61,7 +65,8 @@ Content-Type: application/json
   "audio_base64": "<base64>",
   "mime_type": "audio/webm",
   "dog_name": "Rex",
-  "dog_breed": "Pastor Alemán"
+  "dog_breed": "Pastor Alemán",
+  "lang": "es"
 }
 ```
 
@@ -79,98 +84,146 @@ Content-Type: application/json
     "recomendacion_dueno": "Tu perro necesita actividad. 10 minutos de juego lo calmarán.",
     "tipo_vocalizacion": "ladrido",
     "notas_tecnicas": "Ladrido repetitivo, frecuencia media-alta, patrón rítmico"
-  }
+  },
+  "alert": null
 }
 ```
 
-### Analizar archivo de audio (multipart)
+### Autenticación
 
 ```http
-POST /api/audio/analyze
-Content-Type: multipart/form-data
+POST /api/auth/register   → { token, user }
+POST /api/auth/login      → { token, user }
+GET  /api/auth/me         → { id, email, name }
+```
 
-audio: <archivo>
-dog_name: Rex (opcional)
-dog_breed: Labrador (opcional)
+### Perfiles de perro
+
+```http
+GET    /api/dogs              → Lista de perros (auth)
+POST   /api/dogs              → Crear perro
+PATCH  /api/dogs/:id          → Editar perro
+DELETE /api/dogs/:id          → Eliminar perro
+GET    /api/dogs/:id/history  → Historial de análisis
+GET    /api/dogs/:id/stats    → Estadísticas (emociones, timeline 30d)
+```
+
+### Alertas y compartir
+
+```http
+GET /api/alerts               → Alertas activas (auth)
+GET /api/share/:id            → Análisis público por ID
 ```
 
 ---
 
 ## 🗺️ Roadmap
 
-### ✅ Fase 1 — Motor IA (MVP)
-- [x] Análisis de audio en tiempo real
-- [x] 10 estados emocionales
-- [x] Web App mobile-first
-- [x] API REST documentada
+### ✅ Fase 1 — Motor IA + Web + Dashboard
+- [x] Análisis de audio en tiempo real con `gpt-audio`
+- [x] 10 estados emocionales, 10 necesidades
+- [x] Web App mobile-first + PWA instalable
+- [x] Dashboard completo con login/registro, perfiles y gráficas
+- [x] Historial persistente en PostgreSQL
+- [x] Sistema de alertas de comportamiento
+- [x] Análisis adaptado por raza (10 razas con contexto específico)
+- [x] Soporte multiidioma (ES, EN, DE)
 - [x] Conversión automática de formatos (webm/ogg → mp3)
-- [x] Historial de sesión
-- [ ] PWA (instalar en móvil)
-- [ ] Dog profiles persistentes
-- [ ] Soporte multiidioma (EN, DE, FR, PT)
+- [x] Export CSV del historial
+- [x] Links compartibles por análisis
 - [ ] Dataset público de ladridos etiquetados
 
-### 🔨 Fase 2 — Hardware (en desarrollo)
-- [ ] Collar inteligente con ESP32-S3
-- [ ] Micrófono MEMS I2S (INMP441)
-- [ ] Acelerómetro MPU-6050 (estado físico)
-- [ ] Firmware Arduino open-source
-- [ ] Conectividad BLE → app móvil
-- [ ] Batería LiPo + carga USB-C
-- [ ] PCB diseño abierto (KiCad)
+### 📱 Fase 1b — App Móvil (en desarrollo)
+- [x] Expo + TypeScript con Expo Router
+- [x] 5 pantallas: Analizar, Perros, Historial, Alertas, Perfil
+- [x] Grabación nativa con expo-av
+- [x] Autenticación con SecureStore
+- [x] Compartir análisis nativo (iOS/Android share sheet)
+- [ ] Notificaciones push para alertas
+- [ ] Widget iOS/Android con última interpretación
+- [ ] BLE para collar GuauAI
+
+### 🔧 Fase 2 — Hardware (diseñado)
+- [x] Firmware ESP32-S3 con INMP441 + MPU-6050
+- [x] Conectividad WiFi + BLE + I2S
+- [x] Guía de hardware (~35€ en componentes)
+- [ ] PCB diseño KiCad
+- [ ] Carcasa impresión 3D
+- [ ] Beta hardware (20 unidades)
 
 ### 🏢 Fase 3 — Plataforma SaaS (Ainertia, propietario)
-- [ ] App móvil nativa iOS/Android
-- [ ] Historial de comportamiento por mascota
-- [ ] Dashboard para veterinarias y adiestradoras
-- [ ] Alertas de comportamiento inusual
+- [ ] Dashboard veterinario multi-tenant
+- [ ] Alertas automáticas por email/WhatsApp
 - [ ] API comercial con subscripción
 - [ ] Integración con historiales veterinarios
+- [ ] Soporte FR, PT, IT
 
 ---
 
 ## 🔧 Hardware (Fase 2)
 
-### Lista de componentes (~70€)
+### Lista de componentes (~35€)
 
-| Componente | Modelo | Precio aprox. |
-|---|---|---|
-| Microcontrolador | ESP32-S3 DevKit | 8€ |
-| Micrófono MEMS | INMP441 I2S | 3€ |
-| Acelerómetro | MPU-6050 | 2€ |
-| Batería | LiPo 1000mAh 3.7V | 4€ |
-| Cargador | TP4056 USB-C | 2€ |
-| Carcasa | Impresión 3D / collar adaptado | ~10€ |
-| PCB custom | JLCPCB (10 uds.) | ~8€ |
+| # | Componente | Modelo | Precio aprox. |
+|---|---|---|---|
+| 1 | Microcontrolador | ESP32-S3 DevKit N16R8 | 8€ |
+| 2 | Micrófono MEMS I2S | INMP441 | 3€ |
+| 3 | Acelerómetro | MPU-6050 | 2€ |
+| 4 | Batería | LiPo 1000mAh 3.7V | 4€ |
+| 5 | Cargador USB-C | TP4056 | 2€ |
+| 6 | LED RGB | 5mm cátodo común | 1€ |
+| 7 | PCB | JLCPCB (10 uds.) | ~8€ |
+| **Total** | | | **~28-35€** |
 
-### Firmware
+→ [Guía completa de hardware](hardware/README.md)
+
+---
+
+## 📱 App Móvil (Expo)
 
 ```bash
-# Requiere Arduino IDE + ESP32 board package
-# Abre hardware/firmware/guauai_collar/guauai_collar.ino
+cd mobile
+npm install
+npx expo start   # Expo Go en iOS/Android
 ```
+
+→ [Documentación de la app](mobile/README.md)
+
+---
+
+## 🗄️ Base de datos
+
+Si quieres historial persistente y perfiles de usuario, añade PostgreSQL:
+
+```bash
+# Aplicar schema
+psql $DATABASE_URL < backend/db/schema.sql
+```
+
+Variables de entorno opcionales:
+```
+DATABASE_URL=postgres://...
+JWT_SECRET=tu-secreto-seguro
+```
+
+Sin base de datos el análisis funciona igual — solo sin persistencia.
 
 ---
 
 ## 🤝 Contribuir
 
-```bash
-# 1. Fork del repositorio
-# 2. Crea una rama
-git checkout -b feature/mi-mejora
-
-# 3. Commit
-git commit -m "feat: descripción del cambio"
-
-# 4. Push y Pull Request
-git push origin feature/mi-mejora
-```
-
 **Áreas donde más se necesita ayuda:**
-- 🧪 Dataset de ladridos etiquetados (necesitamos grabaciones reales)
-- 🌍 Traducciones del sistema de análisis
-- 🔧 Mejoras al firmware ESP32
-- 📱 App móvil React Native
+- 🧪 **Dataset**: Grabaciones de perros etiquetadas por emoción
+- 🌍 **Traducciones**: FR, PT, IT, NL
+- 🔧 **Firmware**: Mejoras al ESP32 y diseño PCB
+- 📱 **App**: Nuevas funciones para React Native
+
+```bash
+git checkout -b feature/mi-mejora
+git commit -m "feat: descripción"
+git push origin feature/mi-mejora
+# → Pull Request
+```
 
 ---
 
@@ -178,14 +231,14 @@ git push origin feature/mi-mejora
 
 | Componente | Licencia |
 |---|---|
-| Motor de análisis (este repo) | MIT |
-| App móvil | Propietario — Ainertia Capital S.L. |
-| Firmware collar | MIT |
-| Plataforma SaaS | Propietario — Ainertia Capital S.L. |
+| Motor de análisis + API (este repo) | **MIT** |
+| Firmware collar ESP32 | **MIT** |
+| App móvil iOS/Android | Propietario — Ainertia Capital |
+| Plataforma SaaS veterinaria | Propietario — Ainertia Capital |
 
 ---
 
 <div align="center">
   <strong>Hecho con 🐾 por <a href="https://ainertia.ai">Ainertia Capital</a> — Córdoba, España</strong><br/>
-  <sub>Si te gusta el proyecto, dale una ⭐ en GitHub</sub>
+  <sub>Si te gusta el proyecto, dale una ⭐ — ayuda a que más personas hablen con sus perros</sub>
 </div>
