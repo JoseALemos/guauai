@@ -7,6 +7,9 @@
 const OpenAI = require('openai');
 const fs = require('fs');
 const path = require('path');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -37,25 +40,43 @@ Si el audio NO contiene un perro, devuelve:
 }`;
 
 /**
+ * Convierte audio a MP3 si no es ya wav/mp3 (OpenAI solo acepta wav y mp3)
+ */
+async function convertToMp3(inputPath) {
+  const outputPath = inputPath + '.mp3';
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .outputOptions(['-ar 16000', '-ac 1', '-b:a 64k'])
+      .toFormat('mp3')
+      .on('end', () => resolve(outputPath))
+      .on('error', reject)
+      .save(outputPath);
+  });
+}
+
+/**
  * Analiza un archivo de audio de perro
  * @param {string} audioFilePath - Ruta al archivo de audio (webm/mp4/wav/ogg)
  * @param {string} mimeType - MIME type del audio
  * @returns {Object} Análisis completo
  */
 async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm') {
-  const audioBuffer = fs.readFileSync(audioFilePath);
-  const base64Audio = audioBuffer.toString('base64');
+  // GPT-4o-audio solo acepta wav y mp3 — convertir si es necesario
+  const nativeFormats = ['audio/wav', 'audio/mpeg', 'audio/mp3'];
+  let filePath = audioFilePath;
+  let convertedPath = null;
 
-  // Determinar formato para la API
-  const formatMap = {
-    'audio/webm': 'webm',
-    'audio/ogg': 'ogg',
-    'audio/wav': 'wav',
-    'audio/mpeg': 'mp3',
-    'audio/mp4': 'mp4',
-    'audio/m4a': 'mp4',
-  };
-  const audioFormat = formatMap[mimeType] || 'webm';
+  if (!nativeFormats.includes(mimeType)) {
+    convertedPath = await convertToMp3(audioFilePath);
+    filePath = convertedPath;
+  }
+
+  const audioBuffer = fs.readFileSync(filePath);
+  const base64Audio = audioBuffer.toString('base64');
+  const audioFormat = mimeType === 'audio/wav' ? 'wav' : 'mp3';
+
+  // Limpiar archivo convertido
+  if (convertedPath) fs.unlink(convertedPath, () => {});
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-audio-preview',
@@ -65,17 +86,8 @@ async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm') {
       {
         role: 'user',
         content: [
-          {
-            type: 'text',
-            text: 'Analiza este audio de un perro y devuelve el JSON de análisis:'
-          },
-          {
-            type: 'input_audio',
-            input_audio: {
-              data: base64Audio,
-              format: audioFormat
-            }
-          }
+          { type: 'text', text: 'Analiza este audio de un perro y devuelve el JSON de análisis:' },
+          { type: 'input_audio', input_audio: { data: base64Audio, format: audioFormat } }
         ]
       }
     ],
