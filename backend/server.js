@@ -21,9 +21,23 @@ app.use('/api/audio', require('./routes/audioRoutes'));
 app.use('/api/sessions', require('./routes/sessionRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/dogs', require('./routes/dogRoutes'));
+app.use('/api/share', require('./routes/shareRoutes'));
+
+// Ruta de alertas inline
+app.get('/api/alerts', require('./middleware/auth').verifyToken, async (req, res) => {
+  try {
+    const { getRecentAlerts } = require('./services/alertService');
+    res.json(await getRecentAlerts(req.user.userId));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // Health check
-app.get('/api', (req, res) => res.json({ status: 'DogSpeak API online', version: '0.1.0' }));
+app.get('/api', (req, res) => res.json({ status: 'GuauAI API online', version: '1.0.0' }));
+
+// Dashboard
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(staticDir, 'dashboard.html'));
+});
 
 // Fallback al frontend
 app.get('*', (req, res) => {

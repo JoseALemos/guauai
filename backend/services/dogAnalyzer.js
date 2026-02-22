@@ -77,8 +77,32 @@ async function convertToMp3(inputPath) {
  * @param {string} mimeType - MIME type del audio
  * @returns {Object} Análisis completo
  */
-async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm', lang = 'es') {
-  const systemPrompt = SYSTEM_PROMPTS[lang] || SYSTEM_PROMPTS.es;
+// Contexto específico por raza para mejorar la precisión del análisis
+const BREED_HINTS = {
+  'pastor aleman':  'Los pastores alemanes vocalizan con ladridos profundos y guturales; muy expresivos emocionalmente.',
+  'labrador':       'Los labradores ladran con tono medio-grave; raramente gruñen de forma amenazante.',
+  'beagle':         'Los beagles tienen aullidos/bay característicos; vocalizan mucho cuando rastrean.',
+  'chihuahua':      'Los chihuahuas tienen vocalizaciones agudas; fácilmente activables por estímulos menores.',
+  'golden retriever': 'Los golden son vocalmente moderados; gemidos suaves indican búsqueda de atención.',
+  'bulldog':        'Los bulldogs jadean mucho; vocalizaciones limitadas pero intensas cuando ocurren.',
+  'husky':          'Los huskies aúllan frecuentemente como comunicación normal; no siempre indica distress.',
+  'poodle':         'Los poodles son muy vocales; ladridos repetitivos = estimulación o aburrimiento.',
+  'yorkshire':      'Los yorkshire tienen ladridos agudos y persistentes; territorio y alerta son frecuentes.',
+  'dachshund':      'Los dachshunds tienen ladridos desproporcionados a su tamaño; muy reactivos a estímulos.',
+};
+
+function getBreedHint(breed) {
+  if (!breed) return '';
+  const lower = breed.toLowerCase();
+  for (const [key, hint] of Object.entries(BREED_HINTS)) {
+    if (lower.includes(key)) return `\nContexto de raza (${breed}): ${hint}`;
+  }
+  return `\nRaza: ${breed}`;
+}
+
+async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm', lang = 'es', breed = null) {
+  const basePrompt = SYSTEM_PROMPTS[lang] || SYSTEM_PROMPTS.es;
+  const systemPrompt = basePrompt + getBreedHint(breed);
   // GPT-4o-audio solo acepta wav y mp3 — convertir si es necesario
   const nativeFormats = ['audio/wav', 'audio/mpeg', 'audio/mp3'];
   let filePath = audioFilePath;

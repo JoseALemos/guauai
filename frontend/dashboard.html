@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuauAI — Dashboard</title>
+  <meta name="theme-color" content="#7c3aed"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f; --bg2: #111118; --bg3: #1a1a2e;
+      --purple: #7c3aed; --purple2: #a855f7;
+      --green: #10b981; --red: #ef4444; --yellow: #f59e0b;
+      --text: #f1f5f9; --muted: #64748b; --border: #1e1e30;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+
+    /* ── AUTH ────────────────────────────────────────── */
+    #authScreen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 1rem;
+      background: radial-gradient(ellipse at 50% 0%, #3b0764 0%, #0a0a0f 60%);
+    }
+    .auth-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 1.5rem; padding: 2.5rem 2rem; width: 100%; max-width: 380px;
+    }
+    .auth-logo { text-align: center; margin-bottom: 2rem; }
+    .auth-logo h1 { font-size: 2rem; font-weight: 800; }
+    .auth-logo h1 span { color: var(--purple2); }
+    .auth-logo p { color: var(--muted); font-size: 0.875rem; margin-top: 0.25rem; }
+    .auth-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .auth-tab {
+      flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.75rem;
+      background: transparent; color: var(--muted); cursor: pointer; font-size: 0.875rem; transition: all 0.2s;
+    }
+    .auth-tab.active { background: var(--purple); border-color: var(--purple); color: white; font-weight: 600; }
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+    .field input {
+      width: 100%; padding: 0.75rem 1rem; background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 0.75rem; color: var(--text); font-size: 0.95rem; outline: none; transition: border 0.2s;
+    }
+    .field input:focus { border-color: var(--purple2); }
+    .btn-primary {
+      width: 100%; padding: 0.875rem; background: var(--purple); border: none; border-radius: 0.75rem;
+      color: white; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem;
+    }
+    .btn-primary:hover { background: var(--purple2); }
+    .auth-error { background: #3f1212; border: 1px solid var(--red); border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 0.875rem; color: #fca5a5; margin-bottom: 1rem; display: none; }
+
+    /* ── APP SHELL ───────────────────────────────────── */
+    #app { display: none; min-height: 100vh; }
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; width: 240px;
+      background: var(--bg2); border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem; display: flex; flex-direction: column; z-index: 100;
+    }
+    .sidebar-logo { font-size: 1.5rem; font-weight: 800; padding: 0 0.5rem; margin-bottom: 2rem; }
+    .sidebar-logo span { color: var(--purple2); }
+    nav a {
+      display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.75rem;
+      border-radius: 0.75rem; color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: all 0.15s; margin-bottom: 0.25rem;
+    }
+    nav a:hover { background: var(--bg3); color: var(--text); }
+    nav a.active { background: var(--purple); color: white; font-weight: 600; }
+    .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .user-pill { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.75rem; }
+    .user-avatar { width: 32px; height: 32px; background: var(--purple); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; }
+    .user-name { font-size: 0.8rem; color: var(--muted); }
+    .btn-logout { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+    .btn-logout:hover { color: var(--red); }
+    .main { margin-left: 240px; padding: 2rem; min-height: 100vh; }
+
+    /* ── PAGES ───────────────────────────────────────── */
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+    .page-header h2 { font-size: 1.5rem; font-weight: 700; }
+    .btn-sm {
+      padding: 0.5rem 1rem; background: var(--purple); border: none; border-radius: 0.75rem;
+      color: white; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-sm:hover { background: var(--purple2); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--purple2); color: var(--purple2); }
+
+    /* ── CARDS ───────────────────────────────────────── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; }
+    .card-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .card-value { font-size: 2rem; font-weight: 800; }
+    .card-sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+
+    /* ── DOG GRID ────────────────────────────────────── */
+    .dog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .dog-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 1.25rem; padding: 1.5rem;
+      cursor: pointer; transition: border-color 0.2s, transform 0.1s;
+    }
+    .dog-card:hover { border-color: var(--purple2); transform: translateY(-2px); }
+    .dog-card-top { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .dog-avatar { width: 56px; height: 56px; background: linear-gradient(135deg, var(--purple), var(--purple2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; flex-shrink: 0; }
+    .dog-name { font-size: 1.1rem; font-weight: 700; }
+    .dog-breed { font-size: 0.8rem; color: var(--muted); }
+    .dog-stats-row { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--muted); }
+    .dog-stat strong { color: var(--text); }
+    .add-dog-card {
+      background: transparent; border: 2px dashed var(--border); border-radius: 1.25rem;
+      padding: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 0.5rem; cursor: pointer; color: var(--muted); font-size: 0.9rem; min-height: 140px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .add-dog-card:hover { border-color: var(--purple2); color: var(--purple2); }
+    .add-dog-card span:first-child { font-size: 2rem; }
+
+    /* ── MODAL ───────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 1rem; display: none;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 1.5rem; padding: 2rem; width: 100%; max-width: 420px; }
+    .modal h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem; }
+    .modal-footer { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+    .modal-footer button { flex: 1; }
+
+    /* ── HISTORY TABLE ───────────────────────────────── */
+    .history-table { width: 100%; border-collapse: collapse; }
+    .history-table th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+    .history-table td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+    .history-table tr:hover td { background: var(--bg3); }
+    .badge {
+      display: inline-block; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600;
+    }
+    .badge-feliz, .badge-happy { background: #064e3b; color: #6ee7b7; }
+    .badge-ansioso, .badge-anxious { background: #3f1812; color: #fca5a5; }
+    .badge-excitado, .badge-excited { background: #3b2a00; color: #fcd34d; }
+    .badge-asustado, .badge-scared { background: #1e1b4b; color: #a5b4fc; }
+    .badge-alerta, .badge-alert { background: #2d1b00; color: #fed7aa; }
+    .badge-default { background: var(--bg3); color: var(--muted); }
+
+    /* ── CHARTS ──────────────────────────────────────── */
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; }
+    .chart-card h4 { font-size: 0.875rem; font-weight: 600; color: var(--muted); margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ── DOG DETAIL ──────────────────────────────────── */
+    .back-btn { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.875rem; cursor: pointer; margin-bottom: 1.5rem; }
+    .back-btn:hover { color: var(--text); }
+
+    /* ── EMPTY STATE ─────────────────────────────────── */
+    .empty { text-align: center; padding: 4rem 1rem; color: var(--muted); }
+    .empty span { font-size: 3rem; display: block; margin-bottom: 1rem; }
+
+    /* ── SHARE TOAST ─────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--green);
+      color: white; padding: 0.75rem 1.25rem; border-radius: 0.75rem; font-size: 0.875rem;
+      font-weight: 600; z-index: 999; opacity: 0; transform: translateY(1rem);
+      transition: all 0.3s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ──────────────────────────────────── */
+    @media (max-width: 768px) {
+      .sidebar { width: 60px; padding: 1rem 0.5rem; }
+      .sidebar-logo, nav a span, .user-name, .btn-logout, .sidebar-logo h1 { display: none; }
+      nav a { justify-content: center; }
+      .main { margin-left: 60px; padding: 1rem; }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── AUTH ────────────────────────────────────────────────── -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>Guau<span>AI</span> 🐾</h1>
+      <p>Habla con tu perro</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="switchTab('register')">Registrarse</button>
+    </div>
+    <div id="authError" class="auth-error"></div>
+    <div id="formLogin">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"/></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••••"/></div>
+      <button class="btn-primary" onclick="login()">Entrar →</button>
+    </div>
+    <div id="formRegister" style="display:none">
+      <div class="field"><label>Nombre</label><input type="text" id="regName" placeholder="Tu nombre"/></div>
+      <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="tu@email.com"/></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="regPass" placeholder="Mínimo 6 caracteres"/></div>
+      <button class="btn-primary" onclick="register()">Crear cuenta →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP ─────────────────────────────────────────────────── -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo"><h1>Guau<span>AI</span></h1></div>
+    <nav>
+      <a href="#" class="active" data-page="overview" onclick="navigate('overview',this)">📊 <span>Resumen</span></a>
+      <a href="#" data-page="dogs" onclick="navigate('dogs',this)">🐶 <span>Mis Perros</span></a>
+      <a href="#" data-page="analyzer" onclick="navigate('analyzer',this)">🎤 <span>Analizar</span></a>
+      <a href="#" data-page="history" onclick="navigate('history',this)">📋 <span>Historial</span></a>
+      <a href="#" data-page="alerts" onclick="navigate('alerts',this)">🔔 <span>Alertas</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-name" id="userName"></div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <main class="main">
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="page-header"><h2>Resumen</h2></div>
+      <div class="cards">
+        <div class="card"><div class="card-label">Perros</div><div class="card-value" id="totalDogs">—</div></div>
+        <div class="card"><div class="card-label">Análisis totales</div><div class="card-value" id="totalAnalyses">—</div></div>
+        <div class="card"><div class="card-label">Emoción frecuente</div><div class="card-value" id="topEmotion" style="font-size:1.25rem">—</div></div>
+        <div class="card"><div class="card-label">Último análisis</div><div class="card-value" id="lastAnalysis" style="font-size:1rem">—</div></div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card"><h4>Emociones (30 días)</h4><canvas id="chartEmotions" height="200"></canvas></div>
+        <div class="chart-card"><h4>Actividad diaria</h4><canvas id="chartTimeline" height="200"></canvas></div>
+      </div>
+      <div id="overviewDogList"></div>
+    </div>
+
+    <!-- DOGS -->
+    <div class="page" id="page-dogs">
+      <div class="page-header">
+        <h2>Mis Perros</h2>
+        <button class="btn-sm" onclick="openAddDog()">+ Añadir perro</button>
+      </div>
+      <div class="dog-grid" id="dogGrid">
+        <div class="add-dog-card" onclick="openAddDog()"><span>🐾</span>Añadir perro</div>
+      </div>
+    </div>
+
+    <!-- DOG DETAIL (pseudo-page dentro de dogs) -->
+    <div class="page" id="page-dogdetail">
+      <div class="back-btn" onclick="navigate('dogs',null)">← Volver a Mis Perros</div>
+      <div id="dogDetailHeader"></div>
+      <div class="charts-grid" id="dogDetailCharts"></div>
+      <div class="card" style="overflow:auto">
+        <table class="history-table" id="dogDetailTable">
+          <thead><tr><th>Hora</th><th>Emoción</th><th>Necesidad</th><th>Intensidad</th><th>Confianza</th><th>Mensaje</th><th></th></tr></thead>
+          <tbody id="dogDetailBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ANALYZER -->
+    <div class="page" id="page-analyzer">
+      <div class="page-header"><h2>Analizar Sonido</h2></div>
+      <div style="max-width:480px">
+        <div class="card" style="margin-bottom:1rem">
+          <div class="field"><label>Perro</label>
+            <select id="analyzerDog" style="width:100%;padding:.75rem 1rem;background:var(--bg3);border:1px solid var(--border);border-radius:.75rem;color:var(--text);font-size:.95rem;outline:none">
+              <option value="">Sin asociar</option>
+            </select>
+          </div>
+        </div>
+        <iframe src="/" style="width:100%;height:680px;border:none;border-radius:1.25rem;overflow:hidden"></iframe>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="page" id="page-history">
+      <div class="page-header">
+        <h2>Historial completo</h2>
+        <button class="btn-sm btn-outline" onclick="exportAll()">📥 Exportar CSV</button>
+      </div>
+      <div class="card" style="overflow:auto">
+        <table class="history-table" id="historyTable">
+          <thead><tr><th>Fecha</th><th>Perro</th><th>Emoción</th><th>Necesidad</th><th>Intensidad</th><th>Confianza</th><th>Mensaje</th><th></th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- ALERTS -->
+    <div class="page" id="page-alerts">
+      <div class="page-header"><h2>🔔 Alertas de Comportamiento</h2></div>
+      <div id="alertsList">
+        <div class="empty"><span>🔔</span><p style="color:var(--muted)">Cargando alertas...</p></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── MODAL: ADD/EDIT DOG ──────────────────────────────────── -->
+<div class="modal-overlay" id="dogModal">
+  <div class="modal">
+    <h3 id="dogModalTitle">Añadir perro</h3>
+    <input type="hidden" id="dogModalId"/>
+    <div class="field"><label>Nombre *</label><input type="text" id="dogModalName" placeholder="Rex"/></div>
+    <div class="field"><label>Raza</label><input type="text" id="dogModalBreed" placeholder="Labrador, Bulldog..."/></div>
+    <div class="field"><label>Fecha de nacimiento</label><input type="date" id="dogModalBirth"/></div>
+    <div class="field"><label>Peso (kg)</label><input type="number" id="dogModalWeight" placeholder="12.5" step="0.1"/></div>
+    <div class="field"><label>Notas</label><input type="text" id="dogModalNotes" placeholder="Alergias, medicación..."/></div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-outline" onclick="closeDogModal()">Cancelar</button>
+      <button class="btn-sm" onclick="saveDog()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let token = localStorage.getItem('guauai_token');
+let currentUser = null;
+let dogs = [];
+let emotionChart = null;
+let timelineChart = null;
+const EMOTION_EMOJI = { feliz:'😄', happy:'😄', ansioso:'😰', anxious:'😰', excitado:'🤩', excited:'🤩', asustado:'😨', scared:'😨', alerta:'👀', alert:'👀', jugueton:'🎾', playful:'🎾', dolorido:'😢', painful:'😢', agresivo:'⚠️', aggressive:'⚠️', tranquilo:'😌', calm:'😌', frustrado:'😤', frustrated:'😤' };
+
+// ── AUTH ────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('formLogin').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('formRegister').style.display = tab === 'register' ? '' : 'none';
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('authError').style.display = 'none';
+}
+
+async function login() {
+  const email = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPass').value;
+  const r = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email,password:pass}) });
+  const d = await r.json();
+  if (!r.ok) return showAuthError(d.error);
+  saveToken(d.token, d.user);
+}
+
+async function register() {
+  const name = document.getElementById('regName').value;
+  const email = document.getElementById('regEmail').value;
+  const pass = document.getElementById('regPass').value;
+  const r = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name,email,password:pass}) });
+  const d = await r.json();
+  if (!r.ok) return showAuthError(d.error);
+  saveToken(d.token, d.user);
+}
+
+function saveToken(t, user) {
+  token = t; currentUser = user;
+  localStorage.setItem('guauai_token', t);
+  initApp();
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function logout() {
+  localStorage.removeItem('guauai_token');
+  token = null; currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+}
+
+async function initApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  if (!currentUser) {
+    const r = await fetch(`${API}/auth/me`, { headers:{ Authorization:`Bearer ${token}` } });
+    if (!r.ok) return logout();
+    currentUser = await r.json();
+  }
+  document.getElementById('userName').textContent = currentUser.name || currentUser.email;
+  document.getElementById('userAvatar').textContent = (currentUser.name || currentUser.email)[0].toUpperCase();
+  await loadDogs();
+  loadOverview();
+}
+
+// ── NAVIGATION ──────────────────────────────────────────────────
+function navigate(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById(`page-${page}`)?.classList.add('active');
+  if (el) el.classList.add('active');
+  else document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  if (page === 'history') loadFullHistory();
+  if (page === 'overview') loadOverview();
+  if (page === 'dogs') renderDogGrid();
+  if (page === 'analyzer') populateAnalyzerDogs();
+  if (page === 'alerts') loadAlerts();
+}
+
+// ── DOGS ────────────────────────────────────────────────────────
+async function loadDogs() {
+  const r = await fetch(`${API}/dogs`, { headers:{ Authorization:`Bearer ${token}` } });
+  dogs = r.ok ? await r.json() : [];
+}
+
+function renderDogGrid() {
+  const grid = document.getElementById('dogGrid');
+  grid.innerHTML = dogs.map(d => `
+    <div class="dog-card" onclick="openDogDetail('${d.id}')">
+      <div class="dog-card-top">
+        <div class="dog-avatar">🐶</div>
+        <div><div class="dog-name">${d.name}</div><div class="dog-breed">${d.breed||'Raza no especificada'}</div></div>
+      </div>
+      <div class="dog-stats-row">
+        <div>Análisis: <strong>${d.analyses_30d||0}</strong> este mes</div>
+        <div>Total: <strong>${d.total_analyses||0}</strong></div>
+      </div>
+    </div>
+  `).join('') + `<div class="add-dog-card" onclick="openAddDog()"><span>🐾</span>Añadir perro</div>`;
+}
+
+function openAddDog() {
+  document.getElementById('dogModalTitle').textContent = 'Añadir perro';
+  document.getElementById('dogModalId').value = '';
+  ['Name','Breed','Birth','Weight','Notes'].forEach(f => document.getElementById(`dogModal${f}`).value = '');
+  document.getElementById('dogModal').classList.add('open');
+}
+
+function closeDogModal() { document.getElementById('dogModal').classList.remove('open'); }
+
+async function saveDog() {
+  const id = document.getElementById('dogModalId').value;
+  const body = {
+    name: document.getElementById('dogModalName').value,
+    breed: document.getElementById('dogModalBreed').value || null,
+    birth_date: document.getElementById('dogModalBirth').value || null,
+    weight_kg: document.getElementById('dogModalWeight').value || null,
+    notes: document.getElementById('dogModalNotes').value || null,
+  };
+  if (!body.name) return alert('El nombre es obligatorio');
+  const url = id ? `${API}/dogs/${id}` : `${API}/dogs`;
+  const method = id ? 'PATCH' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify(body) });
+  if (r.ok) {
+    closeDogModal(); await loadDogs(); renderDogGrid(); showToast('✅ Guardado');
+  } else {
+    const e = await r.json(); alert(e.error);
+  }
+}
+
+// ── DOG DETAIL ──────────────────────────────────────────────────
+async function openDogDetail(id) {
+  const dog = dogs.find(d => d.id === id);
+  if (!dog) return;
+  navigate('dogdetail', null);
+
+  document.getElementById('dogDetailHeader').innerHTML = `
+    <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem">
+      <div class="dog-avatar" style="width:72px;height:72px;font-size:2rem">🐶</div>
+      <div>
+        <h2 style="font-size:1.75rem;font-weight:800">${dog.name}</h2>
+        <p style="color:var(--muted)">${dog.breed||''} · ${dog.total_analyses||0} análisis en total</p>
+      </div>
+      <button class="btn-sm btn-outline" style="margin-left:auto" onclick="editDog('${dog.id}')">✏️ Editar</button>
+    </div>`;
+
+  const [statsR, histR] = await Promise.all([
+    fetch(`${API}/dogs/${id}/stats`, { headers:{ Authorization:`Bearer ${token}` } }),
+    fetch(`${API}/dogs/${id}/history?limit=50`, { headers:{ Authorization:`Bearer ${token}` } })
+  ]);
+  const stats = statsR.ok ? await statsR.json() : {};
+  const hist  = histR.ok  ? await histR.json()  : [];
+
+  // Charts
+  document.getElementById('dogDetailCharts').innerHTML = `
+    <div class="chart-card"><h4>Emociones (30 días)</h4><canvas id="detailChartEmotions" height="180"></canvas></div>
+    <div class="chart-card"><h4>Análisis por día</h4><canvas id="detailChartTimeline" height="180"></canvas></div>`;
+
+  if (stats.emotions?.length) {
+    new Chart(document.getElementById('detailChartEmotions'), {
+      type: 'doughnut',
+      data: { labels: stats.emotions.map(e=>e.estado_emocional), datasets: [{ data: stats.emotions.map(e=>e.n), backgroundColor: ['#7c3aed','#a855f7','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6','#f97316','#84cc16'] }] },
+      options: { plugins:{ legend:{ position:'right', labels:{ color:'#f1f5f9', font:{size:11} } } }, maintainAspectRatio:false }
+    });
+  }
+  if (stats.timeline?.length) {
+    new Chart(document.getElementById('detailChartTimeline'), {
+      type: 'bar',
+      data: { labels: stats.timeline.map(t=>new Date(t.day).toLocaleDateString('es',{month:'short',day:'numeric'})), datasets: [{ data: stats.timeline.map(t=>t.n), backgroundColor:'#7c3aed55', borderColor:'#7c3aed', borderWidth:2, borderRadius:4 }] },
+      options: { plugins:{ legend:{display:false} }, scales:{ x:{ticks:{color:'#64748b'},grid:{color:'#1e1e30'}}, y:{ticks:{color:'#64748b'},grid:{color:'#1e1e30'}} }, maintainAspectRatio:false }
+    });
+  }
+
+  // Table
+  document.getElementById('dogDetailBody').innerHTML = hist.length
+    ? hist.map(a => rowHtml(a, false)).join('')
+    : '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted)">Sin análisis todavía</td></tr>';
+}
+
+function editDog(id) {
+  const d = dogs.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('dogModalTitle').textContent = 'Editar perro';
+  document.getElementById('dogModalId').value = d.id;
+  document.getElementById('dogModalName').value = d.name;
+  document.getElementById('dogModalBreed').value = d.breed || '';
+  document.getElementById('dogModalBirth').value = d.birth_date?.slice(0,10) || '';
+  document.getElementById('dogModalWeight').value = d.weight_kg || '';
+  document.getElementById('dogModalNotes').value = d.notes || '';
+  document.getElementById('dogModal').classList.add('open');
+}
+
+// ── OVERVIEW ────────────────────────────────────────────────────
+async function loadOverview() {
+  document.getElementById('totalDogs').textContent = dogs.length;
+  if (!dogs.length) return;
+
+  const totals = dogs.reduce((acc,d) => { acc.total += (d.total_analyses||0); acc.last = d.last_analysis || acc.last; return acc; }, {total:0, last:null});
+  document.getElementById('totalAnalyses').textContent = totals.total;
+  document.getElementById('lastAnalysis').textContent = totals.last ? new Date(totals.last).toLocaleDateString('es') : '—';
+
+  // Agregar stats de todos los perros
+  const allStats = await Promise.all(dogs.map(d => fetch(`${API}/dogs/${d.id}/stats`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.ok?r.json():{})));
+  const emotionMap = {};
+  const timelineMap = {};
+  allStats.forEach(s => {
+    (s.emotions||[]).forEach(e => { emotionMap[e.estado_emocional] = (emotionMap[e.estado_emocional]||0) + parseInt(e.n); });
+    (s.timeline||[]).forEach(t => { const k=t.day?.slice(0,10); if(k) timelineMap[k] = (timelineMap[k]||0) + parseInt(t.n); });
+  });
+  const top = Object.entries(emotionMap).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('topEmotion').textContent = top ? `${EMOTION_EMOJI[top[0]]||'🐶'} ${top[0]}` : '—';
+
+  // Emotion chart
+  const ectx = document.getElementById('chartEmotions');
+  if (emotionChart) emotionChart.destroy();
+  emotionChart = new Chart(ectx, {
+    type:'doughnut',
+    data:{ labels:Object.keys(emotionMap), datasets:[{data:Object.values(emotionMap), backgroundColor:['#7c3aed','#a855f7','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6','#f97316','#84cc16']}] },
+    options:{ plugins:{legend:{position:'right',labels:{color:'#f1f5f9',font:{size:11}}}}, maintainAspectRatio:false }
+  });
+
+  // Timeline chart
+  const tctx = document.getElementById('chartTimeline');
+  if (timelineChart) timelineChart.destroy();
+  const sortedDays = Object.keys(timelineMap).sort();
+  timelineChart = new Chart(tctx, {
+    type:'line',
+    data:{ labels:sortedDays.map(d=>new Date(d).toLocaleDateString('es',{month:'short',day:'numeric'})), datasets:[{data:sortedDays.map(d=>timelineMap[d]), borderColor:'#7c3aed', backgroundColor:'#7c3aed22', fill:true, tension:0.4, pointRadius:3}] },
+    options:{ plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#64748b'},grid:{color:'#1e1e30'}},y:{ticks:{color:'#64748b'},grid:{color:'#1e1e30'}}}, maintainAspectRatio:false }
+  });
+}
+
+// ── HISTORY ─────────────────────────────────────────────────────
+async function loadFullHistory() {
+  const all = await Promise.all(dogs.map(d =>
+    fetch(`${API}/dogs/${d.id}/history?limit=100`, {headers:{Authorization:`Bearer ${token}`}}).then(r=>r.ok?r.json():[]).then(rows=>rows.map(r=>({...r,_dogName:d.name})))
+  ));
+  const flat = all.flat().sort((a,b) => new Date(b.created_at)-new Date(a.created_at));
+  document.getElementById('historyBody').innerHTML = flat.length
+    ? flat.map(a => rowHtml(a, true)).join('')
+    : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">Sin análisis todavía</td></tr>';
+  window._allHistory = flat;
+}
+
+function rowHtml(a, withDog) {
+  const emoji = EMOTION_EMOJI[a.estado_emocional] || '🐶';
+  const badgeClass = `badge-${a.estado_emocional?.replace(/[áéíóú]/g,c=>({á:'a',é:'e',í:'i',ó:'o',ú:'u'}[c]))||'default'}`;
+  const conf = a.confianza ? `${Math.round(a.confianza*100)}%` : '—';
+  const date = new Date(a.created_at).toLocaleString('es',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const shareable = `${location.origin}/share/${a.id}`;
+  return `<tr>
+    <td style="color:var(--muted);white-space:nowrap">${date}</td>
+    ${withDog ? `<td style="font-weight:600">${a._dogName||'—'}</td>` : ''}
+    <td><span class="badge ${badgeClass}">${emoji} ${a.estado_emocional||'—'}</span></td>
+    <td>${a.necesidad||'—'}</td>
+    <td>${a.intensidad||'—'}</td>
+    <td style="color:var(--green)">${conf}</td>
+    <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.mensaje_interpretado||''}">"${a.mensaje_interpretado||'—'}"</td>
+    <td><button class="btn-sm btn-outline" style="padding:.25rem .5rem;font-size:.7rem" onclick="shareAnalysis('${shareable}')">🔗</button></td>
+  </tr>`;
+}
+
+function shareAnalysis(url) {
+  navigator.clipboard?.writeText(url).then(() => showToast('🔗 Link copiado al portapapeles'));
+}
+
+function exportAll() {
+  if (!window._allHistory?.length) return;
+  const csv = ['Fecha,Perro,Emoción,Necesidad,Intensidad,Confianza,Mensaje']
+    .concat(window._allHistory.map(a => `"${new Date(a.created_at).toLocaleString('es')}","${a._dogName||''}","${a.estado_emocional||''}","${a.necesidad||''}","${a.intensidad||''}","${a.confianza||''}","${(a.mensaje_interpretado||'').replace(/"/g,"'")}"`))
+    .join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `guauai_historial_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+function populateAnalyzerDogs() {
+  const sel = document.getElementById('analyzerDog');
+  sel.innerHTML = '<option value="">Sin asociar</option>' + dogs.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── ALERTS ───────────────────────────────────────────────────────
+async function loadAlerts() {
+  const r = await fetch(`${API}/alerts`, { headers:{ Authorization:`Bearer ${token}` } });
+  const alerts = r.ok ? await r.json() : [];
+  const el = document.getElementById('alertsList');
+  if (!alerts.length) {
+    el.innerHTML = `<div class="empty"><span>✅</span><p>Sin alertas recientes. Todo parece bien.</p></div>`;
+    return;
+  }
+  el.innerHTML = alerts.map(a => `
+    <div class="card" style="margin-bottom:1rem;border-left:4px solid var(--red)">
+      <div style="display:flex;align-items:center;gap:1rem">
+        <div style="font-size:1.5rem">⚠️</div>
+        <div>
+          <div style="font-weight:700">${a.dog_name} — ${a.estado_emocional?.toUpperCase()}</div>
+          <div style="color:var(--muted);font-size:.85rem">${new Date(a.created_at).toLocaleString('es')}</div>
+          <div style="margin-top:.5rem;font-size:.9rem">"${a.mensaje_interpretado||''}"</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+if (token) initApp();
+</script>
+</body>
+</html>

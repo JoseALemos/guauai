@@ -90,7 +90,7 @@ router.post('/analyze-base64', express.json({ limit: '15mb' }), optionalToken, a
     fs.mkdirSync(path.dirname(tmpPath), { recursive: true });
     fs.writeFileSync(tmpPath, Buffer.from(audio_base64, 'base64'));
 
-    const result = await analyzeDogAudio(tmpPath, mime_type, lang);
+    const result = await analyzeDogAudio(tmpPath, mime_type, lang, dog_breed || null);
     const response = {
       id: uuidv4(),
       timestamp: new Date().toISOString(),
@@ -100,12 +100,17 @@ router.post('/analyze-base64', express.json({ limit: '15mb' }), optionalToken, a
       ...result
     };
 
-    // Guardar en DB si hay sesión autenticada
+    // Guardar en DB + detectar alertas si hay sesión autenticada
+    let alert = null;
     if (req.user?.userId) {
-      saveAnalysis(req.user.userId, dog_id || null, response);
+      await saveAnalysis(req.user.userId, dog_id || null, response);
+      try {
+        const { checkForAlerts } = require('../services/alertService');
+        alert = await checkForAlerts(req.user.userId, dog_id || null, result.analysis || {});
+      } catch {}
     }
 
-    res.json(response);
+    res.json({ ...response, alert });
   } catch (err) {
     console.error('[DogAnalyzer] Error:', err.message);
     res.status(500).json({ error: err.message });
