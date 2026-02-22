@@ -30,7 +30,7 @@ Graba cualquier sonido de tu perro — ladrido, gemido, gruñido, aullido — y 
 
 ## 🚀 Demo en vivo
 
-👉 **[guauai.ainertia.ai](https://dogspeak-production.up.railway.app)**
+👉 **[guauai.ainertia.io](https://guauai.ainertia.io)**
 
 ---
 
