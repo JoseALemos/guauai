@@ -4,7 +4,7 @@
 > Record your dog. Get instant interpretation. Know what they need.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://dogspeak-production.up.railway.app)
+[![Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://guauai.ainertia.io)
 [![Built with GPT-4o Audio](https://img.shields.io/badge/Powered%20by-gpt--audio-412991)](https://openai.com)
 [![Made by Ainertia](https://img.shields.io/badge/Made%20by-Ainertia%20Capital-00C896)](https://ainertia.ai)
 [![Stars](https://img.shields.io/github/stars/JoseALemos/guauai?style=social)](https://github.com/JoseALemos/guauai)
