@@ -29,6 +29,7 @@ app.use('/api/sessions', require('./routes/sessionRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/dogs', require('./routes/dogRoutes'));
 app.use('/api/share', require('./routes/shareRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Ruta de alertas inline
 app.get('/api/alerts', require('./middleware/auth').verifyToken, async (req, res) => {

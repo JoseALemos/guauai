@@ -314,6 +314,10 @@
     }
     footer span em { display: block; font-size: 1.2rem; font-style: normal; }
 
+    /* ONBOARDING */
+    .ob-dot { width:8px;height:8px;border-radius:50%;background:#1e1e30;transition:background .2s; }
+    .ob-dot.active { background:#7c3aed; }
+
     /* ── RESPONSIVE ─────────────────────────────────────────────── */
 
     /* Móvil pequeño ≤ 380px */
@@ -387,6 +391,20 @@
   </style>
 </head>
 <body>
+
+<!-- ONBOARDING (primera visita) -->
+<div id="onboarding" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);padding:1.5rem;align-items:center;justify-content:center">
+  <div style="background:#111118;border:1px solid #2a1a50;border-radius:1.5rem;padding:2rem;max-width:380px;width:100%;text-align:center">
+    <div id="onboardStep" style="min-height:180px"></div>
+    <div style="display:flex;gap:0.5rem;justify-content:center;margin:1.25rem 0">
+      <div class="ob-dot active" id="dot0"></div>
+      <div class="ob-dot" id="dot1"></div>
+      <div class="ob-dot" id="dot2"></div>
+    </div>
+    <button id="obBtn" onclick="nextOnboard()" style="width:100%;background:#7c3aed;color:white;border:none;border-radius:12px;padding:0.875rem;font-size:1rem;font-weight:700;cursor:pointer">Siguiente →</button>
+    <button onclick="skipOnboard()" style="background:none;border:none;color:#64748b;font-size:0.8rem;cursor:pointer;margin-top:0.75rem;display:block;width:100%">Saltar</button>
+  </div>
+</div>
 
 <header>
   <div class="logo-icon">🐾</div>
@@ -881,6 +899,39 @@ async function saveAnalysisToDB(dogId, analysisData) {
 }
 
 initAuthBanner();
+
+// ── ONBOARDING ────────────────────────────────────────────────────
+const OB_STEPS = [
+  { emoji:'🎤', title:'Graba a tu perro', text:'Pulsa el botón central y graba cualquier sonido — ladrido, gemido, gruñido. Mínimo 2 segundos.' },
+  { emoji:'🧠', title:'IA en tiempo real', text:'GuauAI analiza el audio con el modelo gpt-audio de OpenAI y detecta el estado emocional, necesidad e intensidad.' },
+  { emoji:'📊', title:'Guarda tu historial', text:'Crea una cuenta gratis para guardar todos los análisis, ver estadísticas de comportamiento y recibir alertas.' },
+];
+let obStep = 0;
+
+function renderOnboardStep() {
+  const s = OB_STEPS[obStep];
+  document.getElementById('onboardStep').innerHTML = `
+    <div style="font-size:3.5rem;margin-bottom:1rem">${s.emoji}</div>
+    <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:.75rem">${s.title}</h2>
+    <p style="color:#94a3b8;font-size:.95rem;line-height:1.6">${s.text}</p>`;
+  document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('active', i === obStep));
+  document.getElementById('obBtn').textContent = obStep === OB_STEPS.length - 1 ? '¡Empezar! 🐾' : 'Siguiente →';
+}
+
+function nextOnboard() {
+  if (obStep < OB_STEPS.length - 1) { obStep++; renderOnboardStep(); }
+  else skipOnboard();
+}
+
+function skipOnboard() {
+  document.getElementById('onboarding').style.display = 'none';
+  localStorage.setItem('guauai_onboarded', '1');
+}
+
+if (!localStorage.getItem('guauai_onboarded')) {
+  renderOnboardStep();
+  document.getElementById('onboarding').style.display = 'flex';
+}
 </script>
 </body>
 </html>
