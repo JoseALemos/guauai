@@ -401,7 +401,23 @@
   <div class="card">
     <div class="profile-row">
       <input type="text" id="dogName" placeholder="🐶 Nombre del perro" maxlength="30"/>
-      <input type="text" id="dogBreed" placeholder="Raza (opcional)" maxlength="30"/>
+      <input type="text" id="dogBreed" placeholder="Raza (opcional)" maxlength="50" list="breedList" autocomplete="off"/>
+      <datalist id="breedList">
+        <option value="Labrador Retriever"/><option value="Pastor Alemán"/><option value="Golden Retriever"/>
+        <option value="Bulldog Francés"/><option value="Bulldog Inglés"/><option value="Poodle"/>
+        <option value="Beagle"/><option value="Yorkshire Terrier"/><option value="Chihuahua"/>
+        <option value="Dachshund"/><option value="Husky Siberiano"/><option value="Shih Tzu"/>
+        <option value="Boxer"/><option value="Schnauzer"/><option value="Cocker Spaniel"/>
+        <option value="Border Collie"/><option value="Australian Shepherd"/><option value="Rottweiler"/>
+        <option value="Dobermann"/><option value="Dálmata"/><option value="Weimaraner"/>
+        <option value="Jack Russell Terrier"/><option value="West Highland Terrier"/><option value="Pomerania"/>
+        <option value="Maltés"/><option value="Bichón Frisé"/><option value="Cavalier King Charles"/>
+        <option value="Shar Pei"/><option value="Chow Chow"/><option value="Akita Inu"/>
+        <option value="Shiba Inu"/><option value="Samoyedo"/><option value="Malamute de Alaska"/>
+        <option value="Gran Danés"/><option value="San Bernardo"/><option value="Mastín"/>
+        <option value="Galgo"/><option value="Whippet"/><option value="Basenji"/>
+        <option value="Vizsla"/><option value="Setter Irlandés"/><option value="Braco Alemán"/>
+      </datalist>
     </div>
     <select id="dogSelector" style="display:none;width:100%;margin-top:.5rem;padding:.6rem .875rem;background:#1a1a2e;border:1px solid #222230;border-radius:10px;color:#f0f0f5;font-size:.875rem"></select>
 
@@ -438,9 +454,9 @@
 </main>
 
 <footer>
-  <span><em>🐾</em>GuauAI</span>
-  <span><em>🧠</em>GPT-4o</span>
-  <span><em>⚙️</em>Ainertia</span>
+  <a href="/" style="color:inherit;text-decoration:none"><span><em>🎤</em>Analizar</span></a>
+  <a href="/dashboard" style="color:inherit;text-decoration:none"><span><em>📊</em>Dashboard</span></a>
+  <a href="https://github.com/JoseALemos/guauai" target="_blank" style="color:inherit;text-decoration:none"><span><em>⭐</em>GitHub</span></a>
 </footer>
 
 <script>

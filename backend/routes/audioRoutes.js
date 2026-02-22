@@ -90,7 +90,24 @@ router.post('/analyze-base64', express.json({ limit: '15mb' }), optionalToken, a
     fs.mkdirSync(path.dirname(tmpPath), { recursive: true });
     fs.writeFileSync(tmpPath, Buffer.from(audio_base64, 'base64'));
 
-    const result = await analyzeDogAudio(tmpPath, mime_type, lang, dog_breed || null);
+    // Enriquecer con datos del perro si hay dog_id
+    let dogAge = null, dogWeight = null, finalBreed = dog_breed || null;
+    if (dog_id && req.user?.userId) {
+      try {
+        const pool = require('../db/pool');
+        const dogRow = await pool.query('SELECT breed, birth_date, weight_kg FROM dogs WHERE id=$1 AND user_id=$2', [dog_id, req.user.userId]);
+        if (dogRow.rows[0]) {
+          finalBreed = finalBreed || dogRow.rows[0].breed;
+          dogWeight = dogRow.rows[0].weight_kg;
+          if (dogRow.rows[0].birth_date) {
+            const years = Math.floor((Date.now() - new Date(dogRow.rows[0].birth_date)) / (365.25 * 24 * 3600 * 1000));
+            dogAge = `${years} años`;
+          }
+        }
+      } catch {}
+    }
+
+    const result = await analyzeDogAudio(tmpPath, mime_type, lang, finalBreed, dogAge, dogWeight);
     const response = {
       id: uuidv4(),
       timestamp: new Date().toISOString(),

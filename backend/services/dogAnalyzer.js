@@ -79,17 +79,40 @@ async function convertToMp3(inputPath) {
  */
 // Contexto específico por raza para mejorar la precisión del análisis
 const BREED_HINTS = {
-  'pastor aleman':  'Los pastores alemanes vocalizan con ladridos profundos y guturales; muy expresivos emocionalmente.',
-  'labrador':       'Los labradores ladran con tono medio-grave; raramente gruñen de forma amenazante.',
-  'beagle':         'Los beagles tienen aullidos/bay característicos; vocalizan mucho cuando rastrean.',
-  'chihuahua':      'Los chihuahuas tienen vocalizaciones agudas; fácilmente activables por estímulos menores.',
-  'golden retriever': 'Los golden son vocalmente moderados; gemidos suaves indican búsqueda de atención.',
-  'bulldog':        'Los bulldogs jadean mucho; vocalizaciones limitadas pero intensas cuando ocurren.',
-  'husky':          'Los huskies aúllan frecuentemente como comunicación normal; no siempre indica distress.',
-  'poodle':         'Los poodles son muy vocales; ladridos repetitivos = estimulación o aburrimiento.',
-  'yorkshire':      'Los yorkshire tienen ladridos agudos y persistentes; territorio y alerta son frecuentes.',
-  'dachshund':      'Los dachshunds tienen ladridos desproporcionados a su tamaño; muy reactivos a estímulos.',
+  'pastor aleman':    'Vocalizaciones profundas y guturales; muy expresivos; alta capacidad de comunicación.',
+  'labrador':         'Tono medio-grave; raramente amenazante; muy sociables, sus gemidos suelen ser de atención.',
+  'golden retriever': 'Vocalmente moderados; gemidos suaves = búsqueda de atención; rara vez agresivos.',
+  'beagle':           'Bay/aullido característico al rastrear; vocalizan mucho; separación les genera ansiedad vocal.',
+  'chihuahua':        'Vocalizaciones agudas; muy reactivos a estímulos; ladridos frecuentes ante desconocidos.',
+  'bulldog':          'Jadean mucho por estructura; vocalizaciones cortas pero intensas; gruñidos suelen ser suaves.',
+  'husky':            'Aúllan como comunicación normal; no siempre indica distress; "conversan" con sus dueños.',
+  'poodle':           'Muy vocales; ladridos repetitivos = necesidad de estimulación o aburrimiento.',
+  'yorkshire':        'Ladridos agudos persistentes; territorial; frecuente vocalización de alerta.',
+  'dachshund':        'Ladridos desproporcionados; muy reactivos; instinto de caza elevado.',
+  'boxer':            'Ladridos graves intermitentes; expresivos con gruñidos de juego; muy energéticos.',
+  'rottweiler':       'Ladridos profundos de advertencia; gruñidos de juego vs agresión claramente diferenciables.',
+  'dobermann':        'Vocalizaciones precisas; ladrido único = alerta real; raramente ladran sin motivo.',
+  'border collie':    'Alta expresividad vocal; whine frecuente cuando no tienen tarea; muy inteligentes.',
+  'australian shepherd': 'Vocalizan al arrear; ansiedad vocal ante falta de ejercicio; ladridos de aviso.',
+  'schnauzer':        'Muy territoriales; ladrido agudo de alerta frecuente; atención a extraños.',
+  'shih tzu':         'Ladridos cortos agudos; vocalizan para pedir atención; separación genera gemidos.',
+  'cocker spaniel':   'Sensibles; gemidos frecuentes; ladridos al olfatear o rastrear.',
+  'chow chow':        'Vocalmente reservados; cuando ladran es relevante; gruñidos de advertencia tempranos.',
+  'shiba inu':        'Scream/chillido característico ante frustración; vocal cuando se les toca sin querer.',
+  'akita inu':        'Silenciosos pero expresivos; ladridos = situación seria; gruñidos de alerta.',
+  'samoyedo':         'Muy vocales y "conversadores"; aúllan frecuentemente por socialización.',
+  'maltés':           'Ladridos agudos frecuentes; ansiedad por separación muy vocal.',
+  'bichon frise':     'Vocalmente activos; ladridos de atención; raramente agresivos.',
+  'pomerania':        'Ladridos agudos de alta frecuencia; alertas ante cualquier ruido; territoriales.',
+  'gran danes':       'Ladrido profundo imponente; poco frecuente; grave y resonante.',
+  'san bernardo':     'Ladridos graves poco frecuentes; gruñidos de juego habituales.',
+  'jack russell':     'Muy vocales; energía alta; ladrido cuando rastrean o juegan.',
+  'galgo':            'Silenciosos en general; aúllan raramente; gemidos suaves de atención.',
+  'vizsla':           'Muy afectuosos vocalmente; whine frecuente por necesidad de contacto.',
+  'setter irandes':   'Vocalmente expresivos; ladridos de excitación frecuentes.',
 };
+
+// 30+ razas con contexto etológico específico
 
 function getBreedHint(breed) {
   if (!breed) return '';
@@ -100,9 +123,12 @@ function getBreedHint(breed) {
   return `\nRaza: ${breed}`;
 }
 
-async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm', lang = 'es', breed = null) {
+async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm', lang = 'es', breed = null, age = null, weight = null) {
   const basePrompt = SYSTEM_PROMPTS[lang] || SYSTEM_PROMPTS.es;
-  const systemPrompt = basePrompt + getBreedHint(breed);
+  let context = getBreedHint(breed);
+  if (age)    context += `\nEdad aproximada: ${age}`;
+  if (weight) context += `\nPeso: ${weight} kg`;
+  const systemPrompt = basePrompt + context;
   // GPT-4o-audio solo acepta wav y mp3 — convertir si es necesario
   const nativeFormats = ['audio/wav', 'audio/mpeg', 'audio/mp3'];
   let filePath = audioFilePath;
