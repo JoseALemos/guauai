@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DogSpeak — Habla con tu perro</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f;
+      --card: #13131a;
+      --border: #222230;
+      --accent: #7c3aed;
+      --accent2: #a855f7;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --text: #f0f0f5;
+      --muted: #888899;
+      --radius: 16px;
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* HEADER */
+    header {
+      width: 100%;
+      max-width: 500px;
+      padding: 2rem 1.5rem 1rem;
+      text-align: center;
+    }
+    .logo-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    header h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.5px; }
+    header h1 span { color: var(--accent2); }
+    header p { color: var(--muted); font-size: 0.9rem; margin-top: 0.4rem; }
+
+    /* MAIN CARD */
+    .main { width: 100%; max-width: 500px; padding: 0 1rem 4rem; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* DOG PROFILE */
+    .profile-row { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+    .profile-row input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .profile-row input:focus { border-color: var(--accent); }
+    .profile-row input::placeholder { color: var(--muted); }
+
+    /* RECORDER */
+    .recorder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+    }
+
+    /* WAVEFORM */
+    #waveform {
+      width: 100%;
+      height: 80px;
+      border-radius: 12px;
+      background: rgba(124,58,237,0.07);
+      border: 1px solid var(--border);
+    }
+
+    /* RECORD BTN */
+    .record-btn {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 1.8rem;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 0 0 rgba(124,58,237,0.4);
+    }
+    .record-btn:hover { transform: scale(1.05); }
+    .record-btn.recording {
+      background: linear-gradient(135deg, #c81e1e, #ef4444);
+      animation: pulse-ring 1.5s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+      70% { box-shadow: 0 0 0 20px rgba(239,68,68,0); }
+      100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    }
+
+    .timer {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .timer.recording { color: var(--red); }
+
+    .status-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ANALYZE BTN */
+    .analyze-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      border-radius: 100px;
+      padding: 1rem;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      display: none;
+    }
+    .analyze-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .analyze-btn.visible { display: block; }
+    .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* LOADER */
+    .loader {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 0;
+    }
+    .loader.visible { display: flex; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent2);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p { color: var(--muted); font-size: 0.85rem; }
+
+    /* RESULT */
+    .result { display: none; }
+    .result.visible { display: block; }
+
+    .emotion-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 100px;
+      padding: 0.4rem 1rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--accent2);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .message-bubble {
+      background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(168,85,247,0.1));
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 16px 16px 16px 4px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .message-bubble .dog-icon { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+    .message-bubble p {
+      font-size: 1.1rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text);
+    }
+    .message-bubble .quote-mark { color: var(--accent2); font-size: 1.4rem; line-height: 0; }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .meta-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem;
+    }
+    .meta-item .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.3rem; }
+    .meta-item .value { font-size: 0.9rem; font-weight: 700; }
+
+    .confidence-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: 100px;
+      overflow: hidden;
+      margin-top: 0.4rem;
+    }
+    .confidence-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 100px;
+      transition: width 1s ease;
+    }
+
+    .recommendation {
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: #86efac;
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+    }
+
+    .try-again-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      margin-top: 0.75rem;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .try-again-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+    /* HISTORY */
+    .history-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .history-item:last-child { border-bottom: none; }
+    .history-emoji { font-size: 1.3rem; }
+    .history-info { flex: 1; }
+    .history-info .emotion { font-size: 0.85rem; font-weight: 700; text-transform: capitalize; }
+    .history-info .time { font-size: 0.75rem; color: var(--muted); }
+    .history-info .msg { font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ERROR */
+    .error-msg {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 10px;
+      padding: 1rem;
+      color: #fca5a5;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+
+    /* BOTTOM NAV */
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0; right: 0;
+      background: rgba(10,10,15,0.95);
+      border-top: 1px solid var(--border);
+      padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom));
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+    }
+    footer span {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    footer span em { display: block; font-size: 1.2rem; font-style: normal; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">🐾</div>
+  <h1>Dog<span>Speak</span></h1>
+  <p>Entiende lo que dice tu perro con IA</p>
+</header>
+
+<main class="main">
+
+  <!-- PERFIL DEL PERRO -->
+  <div class="card">
+    <div class="profile-row">
+      <input type="text" id="dogName" placeholder="🐶 Nombre del perro" maxlength="30"/>
+      <input type="text" id="dogBreed" placeholder="Raza (opcional)" maxlength="30"/>
+    </div>
+
+    <!-- RECORDER -->
+    <div class="recorder">
+      <canvas id="waveform"></canvas>
+      <div class="timer" id="timer">00:00</div>
+      <button class="record-btn" id="recordBtn" title="Grabar">🎙️</button>
+      <p class="status-label" id="statusLabel">Pulsa para grabar el sonido de tu perro</p>
+    </div>
+  </div>
+
+  <!-- BOTÓN ANALIZAR -->
+  <button class="analyze-btn" id="analyzeBtn">🔍 Analizar lo que dice</button>
+
+  <!-- LOADER -->
+  <div class="loader card" id="loader">
+    <div class="spinner"></div>
+    <p>Analizando vocalizaciones...</p>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-msg card" id="errorMsg"></div>
+
+  <!-- RESULTADO -->
+  <div class="result card" id="result"></div>
+
+  <!-- HISTORIAL -->
+  <div class="card" id="historyCard" style="display:none">
+    <div class="history-title">Historial de la sesión</div>
+    <div id="historyList"></div>
+  </div>
+
+</main>
+
+<footer>
+  <span><em>🐾</em>DogSpeak</span>
+  <span><em>🧠</em>GPT-4o</span>
+  <span><em>⚙️</em>Ainertia</span>
+</footer>
+
+<script>
+const API_BASE = '/api';
+const recordBtn = document.getElementById('recordBtn');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const timerEl = document.getElementById('timer');
+const statusLabel = document.getElementById('statusLabel');
+const loaderEl = document.getElementById('loader');
+const resultEl = document.getElementById('result');
+const errorEl = document.getElementById('errorMsg');
+const historyCard = document.getElementById('historyCard');
+const historyList = document.getElementById('historyList');
+
+let mediaRecorder = null;
+let audioChunks = [];
+let recordedBlob = null;
+let timerInterval = null;
+let seconds = 0;
+let animationId = null;
+let analyserNode = null;
+let history = [];
+
+// Waveform
+const canvas = document.getElementById('waveform');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function drawIdle() {
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(124,58,237,0.2)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, h/2);
+  ctx.lineTo(w, h/2);
+  ctx.stroke();
+}
+drawIdle();
+
+function drawWaveform(dataArray) {
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(168,85,247,0.8)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  const sliceWidth = w / dataArray.length;
+  let x = 0;
+  for (let i = 0; i < dataArray.length; i++) {
+    const v = dataArray[i] / 128.0;
+    const y = (v * h) / 2;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+    x += sliceWidth;
+  }
+  ctx.lineTo(w, h/2);
+  ctx.stroke();
+}
+
+function formatTime(s) {
+  return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+}
+
+// ── GRABAR ────────────────────────────────────────────────────────────────────
+recordBtn.addEventListener('click', async () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+});
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // Waveform analyser
+    const audioCtx = new AudioContext();
+    const source = audioCtx.createMediaStreamSource(stream);
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 512;
+    source.connect(analyserNode);
+    const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+
+    function drawLoop() {
+      analyserNode.getByteTimeDomainData(dataArray);
+      drawWaveform(dataArray);
+      animationId = requestAnimationFrame(drawLoop);
+    }
+    drawLoop();
+
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      stream.getTracks().forEach(t => t.stop());
+      cancelAnimationFrame(animationId);
+      drawIdle();
+    };
+    mediaRecorder.start(100);
+
+    // UI
+    recordBtn.textContent = '⏹️';
+    recordBtn.classList.add('recording');
+    statusLabel.textContent = 'Grabando... pulsa para detener';
+    analyzeBtn.classList.remove('visible');
+    resultEl.classList.remove('visible');
+    errorEl.classList.remove('visible');
+    seconds = 0;
+    timerEl.textContent = '00:00';
+    timerEl.classList.add('recording');
+    timerInterval = setInterval(() => {
+      seconds++;
+      timerEl.textContent = formatTime(seconds);
+      if (seconds >= 30) stopRecording(); // máx 30 seg
+    }, 1000);
+
+  } catch (err) {
+    showError('No se pudo acceder al micrófono: ' + err.message);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+  clearInterval(timerInterval);
+  recordBtn.textContent = '🎙️';
+  recordBtn.classList.remove('recording');
+  timerEl.classList.remove('recording');
+  if (seconds > 0) {
+    statusLabel.textContent = `Audio listo (${formatTime(seconds)}) — pulsa analizar`;
+    analyzeBtn.classList.add('visible');
+  } else {
+    statusLabel.textContent = 'Pulsa para grabar el sonido de tu perro';
+  }
+}
+
+// ── ANALIZAR ──────────────────────────────────────────────────────────────────
+analyzeBtn.addEventListener('click', async () => {
+  if (!recordedBlob) return;
+  analyzeBtn.disabled = true;
+  loaderEl.classList.add('visible');
+  resultEl.classList.remove('visible');
+  errorEl.classList.remove('visible');
+
+  try {
+    const reader = new FileReader();
+    reader.readAsDataURL(recordedBlob);
+    reader.onloadend = async () => {
+      const base64 = reader.result.split(',')[1];
+      const res = await fetch(`${API_BASE}/audio/analyze-base64`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audio_base64: base64,
+          mime_type: 'audio/webm',
+          dog_name: document.getElementById('dogName').value || 'Mi perro',
+          dog_breed: document.getElementById('dogBreed').value || null
+        })
+      });
+
+      loaderEl.classList.remove('visible');
+
+      if (!res.ok) {
+        const err = await res.json();
+        showError(err.error || 'Error al analizar');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.analysis?.error) {
+        showError('No se detectó audio de perro. Intenta grabar más cerca.');
+        return;
+      }
+
+      renderResult(data);
+      addToHistory(data);
+      analyzeBtn.classList.remove('visible');
+      analyzeBtn.disabled = false;
+    };
+  } catch (err) {
+    loaderEl.classList.remove('visible');
+    analyzeBtn.disabled = false;
+    showError('Error de conexión: ' + err.message);
+  }
+});
+
+// ── RENDER RESULTADO ──────────────────────────────────────────────────────────
+const EMOTION_EMOJI = {
+  ansioso: '😰', tranquilo: '😌', excitado: '🤩', asustado: '😨',
+  alerta: '⚡', juguetón: '🎾', dolorido: '🤕', agresivo: '😡',
+  frustrado: '😤', feliz: '😄'
+};
+
+const NEED_LABEL = {
+  atención: 'Pide atención', juego: 'Quiere jugar', comida: 'Tiene hambre',
+  agua: 'Quiere agua', paseo: 'Quiere salir', alarma: 'Está alertando',
+  dolor: 'Siente dolor', miedo: 'Tiene miedo', territorial: 'Marcando territorio',
+  sin_necesidad_clara: 'Sin necesidad concreta'
+};
+
+function renderResult(data) {
+  const a = data.analysis;
+  const emoji = EMOTION_EMOJI[a.estado_emocional] || '🐶';
+  const conf = Math.round((a.confianza || 0) * 100);
+
+  resultEl.innerHTML = `
+    <div class="emotion-badge">${emoji} ${a.estado_emocional?.toUpperCase() || 'DESCONOCIDO'}</div>
+
+    <div class="message-bubble">
+      <span class="dog-icon">${emoji}</span>
+      <p><span class="quote-mark">"</span>${a.mensaje_interpretado || '...'}<span class="quote-mark">"</span></p>
+    </div>
+
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="label">Necesidad</div>
+        <div class="value">${NEED_LABEL[a.necesidad] || a.necesidad || '—'}</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Vocalización</div>
+        <div class="value">${a.tipo_vocalizacion || '—'}</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Intensidad</div>
+        <div class="value">${a.intensidad?.toUpperCase() || '—'}</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Confianza IA</div>
+        <div class="value">${conf}%</div>
+        <div class="confidence-bar">
+          <div class="confidence-fill" style="width:${conf}%"></div>
+        </div>
+      </div>
+    </div>
+
+    ${a.recomendacion_dueno ? `
+    <div class="recommendation">
+      <span>💡</span>
+      <span>${a.recomendacion_dueno}</span>
+    </div>` : ''}
+
+    <button class="try-again-btn" onclick="resetRecorder()">🔄 Grabar de nuevo</button>
+  `;
+  resultEl.classList.add('visible');
+}
+
+function addToHistory(data) {
+  const a = data.analysis;
+  const entry = {
+    emotion: a.estado_emocional,
+    msg: a.mensaje_interpretado,
+    time: new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'})
+  };
+  history.unshift(entry);
+  if (history.length > 10) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  historyCard.style.display = 'block';
+  historyList.innerHTML = history.map(h => `
+    <div class="history-item">
+      <span class="history-emoji">${EMOTION_EMOJI[h.emotion] || '🐶'}</span>
+      <div class="history-info">
+        <div class="emotion">${h.emotion}</div>
+        <div class="msg">"${h.msg}"</div>
+      </div>
+      <div class="history-info" style="flex:0; text-align:right">
+        <div class="time">${h.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showError(msg) {
+  errorEl.textContent = '⚠️ ' + msg;
+  errorEl.classList.add('visible');
+  analyzeBtn.disabled = false;
+}
+
+function resetRecorder() {
+  recordedBlob = null;
+  seconds = 0;
+  timerEl.textContent = '00:00';
+  statusLabel.textContent = 'Pulsa para grabar el sonido de tu perro';
+  analyzeBtn.classList.remove('visible');
+  resultEl.classList.remove('visible');
+  errorEl.classList.remove('visible');
+  drawIdle();
+}
+</script>
+</body>
+</html>
