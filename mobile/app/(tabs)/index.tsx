@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { analyzeAudio, dogsApi } from '../../services/api';
 import { colors, EMOTION_EMOJI, EMOTION_COLOR } from '../../constants/theme';
 import { useFocusEffect } from 'expo-router';
+import { notifyIfAlert, registerForPushNotifications } from '../../services/notifications';
 
 interface Dog { id: string; name: string; breed: string; }
 interface Analysis {
@@ -36,6 +37,7 @@ export default function AnalyzeScreen() {
 
   useFocusEffect(useCallback(() => {
     dogsApi.list().then(setDogs).catch(() => {});
+    registerForPushNotifications().catch(() => {});
   }, []));
 
   function startPulse() {
@@ -96,6 +98,7 @@ export default function AnalyzeScreen() {
       );
       setResult(res);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await notifyIfAlert(dog?.name || 'Tu perro', res.alert || null);
     } catch (e: any) {
       Alert.alert('Error al analizar', e.message);
     } finally {

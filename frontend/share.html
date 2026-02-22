@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuauAI — Análisis compartido</title>
+  <meta name="description" content="Análisis de vocalización canina con IA — GuauAI"/>
+  <meta property="og:title" content="GuauAI 🐾"/>
+  <meta property="og:description" id="ogDesc" content="Mira lo que dijo mi perro"/>
+  <meta property="og:image" content="https://dogspeak-production.up.railway.app/icon-512.png"/>
+  <meta name="theme-color" content="#7c3aed"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0a0a0f;color:#f1f5f9;font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem}
+    .card{background:#111118;border:1px solid #1e1e30;border-radius:1.5rem;padding:2rem;max-width:480px;width:100%;text-align:center}
+    .logo{font-size:1.25rem;font-weight:800;color:#a855f7;margin-bottom:1.5rem}
+    .dog-info{color:#64748b;font-size:.9rem;margin-bottom:1.5rem}
+    .emoji{font-size:5rem;margin-bottom:.75rem;display:block}
+    .emotion{font-size:1.75rem;font-weight:900;margin-bottom:.5rem}
+    .badge{display:inline-block;padding:.3rem .9rem;border-radius:9999px;font-size:.8rem;font-weight:700;margin-bottom:1.25rem}
+    .message{font-size:1.2rem;font-style:italic;line-height:1.6;margin-bottom:1.5rem;color:#e2e8f0}
+    .divider{height:1px;background:#1e1e30;margin:1.25rem 0}
+    .row{display:flex;justify-content:space-between;padding:.5rem 0;font-size:.9rem}
+    .row span:first-child{color:#64748b}
+    .row span:last-child{font-weight:600}
+    .rec{background:#1a1a2e;border-radius:.875rem;padding:1rem;margin-top:1.25rem;text-align:left}
+    .rec-label{font-size:.75rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+    .rec-text{font-size:.9rem;line-height:1.5}
+    .cta{margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid #1e1e30}
+    .cta p{color:#64748b;font-size:.875rem;margin-bottom:.875rem}
+    .cta a{display:inline-block;background:#7c3aed;color:white;padding:.75rem 1.5rem;border-radius:.875rem;text-decoration:none;font-weight:700;font-size:.95rem}
+    .error{color:#ef4444;font-size:1rem;padding:2rem}
+    .loading{color:#64748b;font-size:1rem}
+    .notes{color:#64748b;font-size:.8rem;font-style:italic;margin-top:.75rem}
+  </style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="loading">🐾 Cargando análisis…</div>
+</div>
+
+<script>
+const EMOTION_EMOJI={feliz:'😄',happy:'😄',ansioso:'😰',anxious:'😰',excitado:'🤩',excited:'🤩',asustado:'😨',scared:'😨',alerta:'👀',alert:'👀','juguetón':'🎾',playful:'🎾',dolorido:'😢',painful:'😢',agresivo:'⚠️',aggressive:'⚠️',tranquilo:'😌',calm:'😌',frustrado:'😤',frustrated:'😤'};
+const EMOTION_COLOR={feliz:'#10b981',happy:'#10b981',excitado:'#f59e0b',excited:'#f59e0b',tranquilo:'#3b82f6',calm:'#3b82f6',alerta:'#f97316',alert:'#f97316',ansioso:'#ef4444',anxious:'#ef4444',asustado:'#8b5cf6',scared:'#8b5cf6',dolorido:'#ef4444',painful:'#ef4444',agresivo:'#ef4444',aggressive:'#ef4444',frustrado:'#f59e0b',frustrated:'#f59e0b','juguetón':'#10b981',playful:'#10b981'};
+
+const id = location.pathname.split('/').pop();
+
+fetch(`/api/share/${id}`)
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(data => {
+    const emoji = EMOTION_EMOJI[data.estado_emocional] || '🐶';
+    const color = EMOTION_COLOR[data.estado_emocional] || '#7c3aed';
+    const conf  = Math.round((data.confianza||0)*100);
+    const date  = new Date(data.created_at).toLocaleString('es',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+    const dogInfo = [data.dog_name, data.dog_breed].filter(Boolean).join(' · ');
+
+    // Update OG meta
+    document.getElementById('ogDesc').setAttribute('content',`${emoji} ${data.estado_emocional} · "${data.mensaje_interpretado}"`);
+    document.title = `GuauAI — ${data.dog_name||'Mi perro'} dice: ${data.estado_emocional}`;
+
+    document.getElementById('card').innerHTML = `
+      <div class="logo">🐾 GuauAI</div>
+      ${dogInfo ? `<div class="dog-info">🐶 ${dogInfo} · ${date}</div>` : `<div class="dog-info">${date}</div>`}
+      <span class="emoji">${emoji}</span>
+      <div class="emotion" style="color:${color}">${data.estado_emocional?.toUpperCase()}</div>
+      <span class="badge" style="background:${color}22;color:${color}">${data.tipo_vocalizacion||'vocalización'} · ${data.intensidad||''} · ${conf}% confianza</span>
+      <p class="message">"${data.mensaje_interpretado}"</p>
+      <div class="divider"></div>
+      <div class="row"><span>Necesidad</span><span>${data.necesidad||'—'}</span></div>
+      ${data.notas_tecnicas ? `<p class="notes">🔬 ${data.notas_tecnicas}</p>` : ''}
+      ${data.recomendacion_dueno ? `<div class="rec"><div class="rec-label">💡 Recomendación</div><div class="rec-text">${data.recomendacion_dueno}</div></div>` : ''}
+      <div class="cta">
+        <p>¿Quieres saber qué dice tu perro?</p>
+        <a href="/">Analizar mi perro gratis →</a>
+      </div>`;
+  })
+  .catch(() => {
+    document.getElementById('card').innerHTML = '<div class="error">❌ Análisis no encontrado o expirado</div>';
+  });
+</script>
+</body>
+</html>

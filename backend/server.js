@@ -39,6 +39,11 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(staticDir, 'dashboard.html'));
 });
 
+// Share — análisis públicos
+app.get('/share/:id', (req, res) => {
+  res.sendFile(path.join(staticDir, 'share.html'));
+});
+
 // Fallback al frontend
 app.get('*', (req, res) => {
   res.sendFile(path.join(staticDir, 'index.html'));
