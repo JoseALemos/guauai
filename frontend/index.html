@@ -313,6 +313,77 @@
       text-align: center;
     }
     footer span em { display: block; font-size: 1.2rem; font-style: normal; }
+
+    /* ── RESPONSIVE ─────────────────────────────────────────────── */
+
+    /* Móvil pequeño ≤ 380px */
+    @media (max-width: 380px) {
+      header { padding: 1.25rem 1rem 0.75rem; }
+      .logo-icon { font-size: 2rem; }
+      header h1 { font-size: 1.5rem; }
+      .main { padding: 0 0.625rem 5rem; }
+      .card { padding: 1.1rem; border-radius: 12px; }
+      .profile-row { flex-direction: column; gap: 0.5rem; }
+      .profile-row input { font-size: 1rem; padding: 0.8rem 0.875rem; }
+      .record-btn { width: 88px; height: 88px; font-size: 2rem; }
+      .meta-grid { grid-template-columns: 1fr; }
+      .analyze-btn { font-size: 0.95rem; padding: 0.9rem; }
+      .history-info .msg { max-width: 200px; }
+    }
+
+    /* Móvil ≤ 480px */
+    @media (max-width: 480px) {
+      body { -webkit-tap-highlight-color: transparent; }
+      header { padding: 1.5rem 1rem 0.75rem; }
+      .main { padding: 0 0.75rem 5rem; }
+      .card { border-radius: 14px; }
+      /* Inputs más altos = mejor touch target */
+      .profile-row input { padding: 0.8rem 0.9rem; font-size: 0.95rem; min-height: 44px; }
+      #dogSelector { min-height: 44px; font-size: 0.95rem; }
+      /* Waveform más compacto */
+      #waveform { height: 60px; }
+      /* Botón grabar más grande en móvil */
+      .record-btn { width: 88px; height: 88px; font-size: 2.1rem; }
+      /* Botón analizar - full tap */
+      .analyze-btn { padding: 1rem; border-radius: 14px; font-size: 1rem; min-height: 52px; }
+      /* Resultado */
+      .message-bubble p { font-size: 1rem; }
+      .meta-item .label { font-size: 0.65rem; }
+      .meta-item .value { font-size: 0.85rem; }
+      /* Historial */
+      .history-info .msg { max-width: calc(100vw - 160px); }
+      /* Footer */
+      footer { gap: 1rem; padding-left: 0.5rem; padding-right: 0.5rem; }
+      footer span { font-size: 0.65rem; }
+    }
+
+    /* Tablet/Desktop ≥ 640px — centrado más amplio */
+    @media (min-width: 640px) {
+      header { max-width: 560px; padding: 2.5rem 2rem 1rem; }
+      header h1 { font-size: 2.2rem; }
+      .main { max-width: 560px; padding: 0 1.5rem 5rem; }
+      .record-btn { width: 96px; height: 96px; font-size: 2.2rem; }
+      .analyze-btn { font-size: 1.05rem; }
+      .message-bubble p { font-size: 1.15rem; }
+      footer { gap: 3rem; }
+    }
+
+    /* Hover solo en dispositivos con puntero (no táctil) */
+    @media (hover: none) {
+      .record-btn:hover { transform: none; }
+      .analyze-btn:hover { opacity: 1; transform: none; }
+      .try-again-btn:hover { border-color: var(--border); color: var(--muted); }
+    }
+
+    /* Safe area para iPhone X+ */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      footer {
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+      }
+      .main {
+        padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+      }
+    }
   </style>
 </head>
 <body>
@@ -333,7 +404,6 @@
       <input type="text" id="dogBreed" placeholder="Raza (opcional)" maxlength="30"/>
     </div>
     <select id="dogSelector" style="display:none;width:100%;margin-top:.5rem;padding:.6rem .875rem;background:#1a1a2e;border:1px solid #222230;border-radius:10px;color:#f0f0f5;font-size:.875rem"></select>
-    </div>
 
     <!-- RECORDER -->
     <div class="recorder">
