@@ -372,6 +372,7 @@
 
 <script>
 const API_BASE = '/api';
+const LANG = navigator.language?.slice(0,2) || 'es'; // auto-detect: es, en, de...
 const recordBtn = document.getElementById('recordBtn');
 const analyzeBtn = document.getElementById('analyzeBtn');
 const timerEl = document.getElementById('timer');
@@ -551,6 +552,7 @@ analyzeBtn.addEventListener('click', async () => {
         body: JSON.stringify({
           audio_base64: base64,
           mime_type: 'audio/webm',
+          lang: LANG,
           dog_name: document.getElementById('dogName').value || 'Mi perro',
           dog_breed: document.getElementById('dogBreed').value || null
         })

@@ -5,6 +5,26 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { analyzeDogAudio } = require('../services/dogAnalyzer');
+const { optionalToken } = require('../middleware/auth');
+
+// Guardar análisis en DB si hay usuario autenticado
+async function saveAnalysis(userId, dogId, data) {
+  if (!userId) return;
+  try {
+    const pool = require('../db/pool');
+    const a = data.analysis;
+    await pool.query(
+      `INSERT INTO analyses (user_id, dog_id, estado_emocional, necesidad, intensidad, confianza,
+       mensaje_interpretado, recomendacion, tipo_vocalizacion, notas_tecnicas, duration_ms, model_used, tokens_used, device)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [userId, dogId || null, a.estado_emocional, a.necesidad, a.intensidad, a.confianza,
+       a.mensaje_interpretado, a.recomendacion_dueno, a.tipo_vocalizacion, a.notas_tecnicas,
+       data.duration_ms, data.model, data.tokens_used, 'web']
+    );
+  } catch (e) {
+    console.error('[DB] Error guardando análisis:', e.message);
+  }
+}
 
 // Storage temporal para audios
 const upload = multer({
@@ -59,8 +79,8 @@ router.post('/analyze', upload.single('audio'), async (req, res) => {
  * Analiza audio enviado como base64 (para web/mobile sin multipart)
  * Body: { audio_base64, mime_type, dog_name?, dog_breed? }
  */
-router.post('/analyze-base64', express.json({ limit: '15mb' }), async (req, res) => {
-  const { audio_base64, mime_type = 'audio/webm', dog_name, dog_breed } = req.body;
+router.post('/analyze-base64', express.json({ limit: '15mb' }), optionalToken, async (req, res) => {
+  const { audio_base64, mime_type = 'audio/webm', dog_name, dog_breed, dog_id, lang = 'es' } = req.body;
   if (!audio_base64) return res.status(400).json({ error: 'audio_base64 requerido' });
 
   const tmpPath = path.join(__dirname, '../../tmp/', `${uuidv4()}.audio`);
@@ -70,16 +90,22 @@ router.post('/analyze-base64', express.json({ limit: '15mb' }), async (req, res)
     fs.mkdirSync(path.dirname(tmpPath), { recursive: true });
     fs.writeFileSync(tmpPath, Buffer.from(audio_base64, 'base64'));
 
-    const result = await analyzeDogAudio(tmpPath, mime_type);
-
-    res.json({
+    const result = await analyzeDogAudio(tmpPath, mime_type, lang);
+    const response = {
       id: uuidv4(),
       timestamp: new Date().toISOString(),
       duration_ms: Date.now() - startTime,
       dog_name: dog_name || null,
       dog_breed: dog_breed || null,
       ...result
-    });
+    };
+
+    // Guardar en DB si hay sesión autenticada
+    if (req.user?.userId) {
+      saveAnalysis(req.user.userId, dog_id || null, response);
+    }
+
+    res.json(response);
   } catch (err) {
     console.error('[DogAnalyzer] Error:', err.message);
     res.status(500).json({ error: err.message });

@@ -19,6 +19,8 @@ app.use(express.static(staticDir));
 // API routes
 app.use('/api/audio', require('./routes/audioRoutes'));
 app.use('/api/sessions', require('./routes/sessionRoutes'));
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/dogs', require('./routes/dogRoutes'));
 
 // Health check
 app.get('/api', (req, res) => res.json({ status: 'DogSpeak API online', version: '0.1.0' }));

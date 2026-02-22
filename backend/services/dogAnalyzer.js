@@ -13,31 +13,48 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const SYSTEM_PROMPT = `Eres un experto en etología canina y comunicación animal.
-Tu misión es analizar audio de perros y proporcionar una interpretación científicamente fundamentada.
-
-Cuando recibas un audio de un perro, analiza:
-1. El tipo de vocalización (ladrido, gemido, gruñido, aullido, quejido, jadeo, silencio, etc.)
-2. El patrón rítmico y la frecuencia (rápido/lento, agudo/grave, continuo/intermitente)
-3. La intensidad y urgencia del sonido
-
-Responde SIEMPRE con un JSON válido con esta estructura exacta:
+const SYSTEM_PROMPTS = {
+  es: `Eres un experto en etología canina. Analiza el audio y responde SOLO con JSON válido:
 {
   "estado_emocional": "ansioso|tranquilo|excitado|asustado|alerta|juguetón|dolorido|agresivo|frustrado|feliz",
   "necesidad": "atención|juego|comida|agua|paseo|alarma|dolor|miedo|territorial|sin_necesidad_clara",
   "intensidad": "alta|media|baja",
   "confianza": 0.0-1.0,
-  "mensaje_interpretado": "Frase corta en primera persona como si hablaras por el perro (máx 20 palabras)",
-  "recomendacion_dueno": "Qué debe hacer el dueño ahora mismo (máx 25 palabras)",
+  "mensaje_interpretado": "Frase en primera persona del perro (máx 20 palabras, en español)",
+  "recomendacion_dueno": "Qué hacer ahora (máx 25 palabras, en español)",
   "tipo_vocalizacion": "ladrido|gemido|gruñido|aullido|quejido|jadeo|silencio|mixto",
-  "notas_tecnicas": "Observación técnica breve sobre el sonido analizado"
+  "notas_tecnicas": "Observación técnica breve"
 }
+Si no hay perro: {"error":"no_dog_detected","mensaje":"No se detectó audio de perro"}`,
 
-Si el audio NO contiene un perro, devuelve:
+  en: `You are an expert in canine ethology. Analyze the audio and respond ONLY with valid JSON:
 {
-  "error": "no_dog_detected",
-  "mensaje": "No se detectó audio de perro en la grabación"
-}`;
+  "estado_emocional": "anxious|calm|excited|scared|alert|playful|painful|aggressive|frustrated|happy",
+  "necesidad": "attention|play|food|water|walk|alarm|pain|fear|territorial|unclear",
+  "intensidad": "high|medium|low",
+  "confianza": 0.0-1.0,
+  "mensaje_interpretado": "First person message from the dog (max 20 words, in English)",
+  "recomendacion_dueno": "What to do now (max 25 words, in English)",
+  "tipo_vocalizacion": "bark|whine|growl|howl|yelp|panting|silence|mixed",
+  "notas_tecnicas": "Brief technical observation"
+}
+If no dog: {"error":"no_dog_detected","mensaje":"No dog audio detected"}`,
+
+  de: `Du bist ein Experte für Hundeverhalten. Analysiere das Audio und antworte NUR mit gültigem JSON:
+{
+  "estado_emocional": "ängstlich|ruhig|aufgeregt|verängstigt|wachsam|verspielt|schmerzend|aggressiv|frustriert|glücklich",
+  "necesidad": "aufmerksamkeit|spielen|futter|wasser|spaziergang|alarm|schmerz|angst|territorial|unklar",
+  "intensidad": "hoch|mittel|niedrig",
+  "confianza": 0.0-1.0,
+  "mensaje_interpretado": "Nachricht aus Sicht des Hundes (max 20 Wörter, auf Deutsch)",
+  "recomendacion_dueno": "Was jetzt tun (max 25 Wörter, auf Deutsch)",
+  "tipo_vocalizacion": "bellen|winseln|knurren|heulen|quieken|hecheln|stille|gemischt",
+  "notas_tecnicas": "Kurze technische Beobachtung"
+}
+Falls kein Hund: {"error":"no_dog_detected","mensaje":"Kein Hundeaudio erkannt"}`
+};
+
+const SYSTEM_PROMPT = SYSTEM_PROMPTS.es; // default
 
 /**
  * Convierte audio a MP3 si no es ya wav/mp3 (OpenAI solo acepta wav y mp3)
@@ -60,7 +77,8 @@ async function convertToMp3(inputPath) {
  * @param {string} mimeType - MIME type del audio
  * @returns {Object} Análisis completo
  */
-async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm') {
+async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm', lang = 'es') {
+  const systemPrompt = SYSTEM_PROMPTS[lang] || SYSTEM_PROMPTS.es;
   // GPT-4o-audio solo acepta wav y mp3 — convertir si es necesario
   const nativeFormats = ['audio/wav', 'audio/mpeg', 'audio/mp3'];
   let filePath = audioFilePath;
@@ -82,7 +100,7 @@ async function analyzeDogAudio(audioFilePath, mimeType = 'audio/webm') {
     model: process.env.OPENAI_AUDIO_MODEL || 'gpt-audio',
     modalities: ['text'],
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       {
         role: 'user',
         content: [
