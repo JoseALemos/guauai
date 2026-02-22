@@ -79,13 +79,16 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1.2rem;
+      gap: 1rem;
+    }
+    @media (max-width: 520px) {
+      .recorder { gap: 0.7rem; }
     }
 
     /* WAVEFORM */
     #waveform {
       width: 100%;
-      height: 80px;
+      height: 64px;
       border-radius: 12px;
       background: rgba(124,58,237,0.07);
       border: 1px solid var(--border);
@@ -386,7 +389,7 @@
       }
 
       /* Waveform */
-      #waveform { height: 56px; }
+      #waveform { height: 44px; }
 
       /* Botón grabar */
       .record-btn { width: 84px; height: 84px; font-size: 2rem; }
