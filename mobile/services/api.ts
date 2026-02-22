@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://dogspeak-production.up.railway.app';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://guauai.ainertia.io';
 const TOKEN_KEY = 'guauai_token';
 
 export async function getToken(): Promise<string | null> {

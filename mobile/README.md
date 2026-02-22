@@ -47,7 +47,7 @@ mobile/
 
 ```bash
 # .env
-EXPO_PUBLIC_API_URL=https://dogspeak-production.up.railway.app
+EXPO_PUBLIC_API_URL=https://guauai.ainertia.io
 ```
 
 ## Permisos requeridos

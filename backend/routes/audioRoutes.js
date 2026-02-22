@@ -119,7 +119,7 @@ router.post('/analyze-base64', express.json({ limit: '15mb' }), optionalToken, a
             emotion: result.analysis?.estado_emocional,
             message: result.analysis?.mensaje_interpretado,
             recommendation: result.analysis?.recomendacion_dueno,
-            shareUrl: `${process.env.APP_URL || 'https://dogspeak-production.up.railway.app'}/share/${response.id}`,
+            shareUrl: `${process.env.APP_URL || 'https://guauai.ainertia.io'}/share/${response.id}`,
           }).catch(() => {});
         }
       } catch {}

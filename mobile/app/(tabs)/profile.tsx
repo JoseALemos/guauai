@@ -38,7 +38,7 @@ export default function ProfileScreen() {
         <View style={s.section}>
           <Text style={s.sectionTitle}>ACERCA DE GUAUAI</Text>
           {[
-            ['🌐', 'Web', 'dogspeak-production.up.railway.app'],
+            ['🌐', 'Web', 'guauai.ainertia.io'],
             ['📂', 'Open Source', 'github.com/JoseALemos/guauai'],
             ['🏢', 'Hecho por', 'Ainertia Capital S.L.'],
             ['📍', 'Ubicación', 'Córdoba, España'],

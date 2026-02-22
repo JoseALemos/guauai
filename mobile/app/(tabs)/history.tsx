@@ -38,7 +38,7 @@ export default function HistoryScreen() {
   async function shareAnalysis(a: Analysis) {
     await Share.share({
       message: `🐾 GuauAI — ${a._dogName || 'Mi perro'}\n\n${EMOTION_EMOJI[a.estado_emocional] || '🐶'} ${a.estado_emocional?.toUpperCase()}\n\n"${a.mensaje_interpretado}"\n\n💡 ${a.recomendacion_dueno}\n\n— Analizado con GuauAI`,
-      url: `https://dogspeak-production.up.railway.app/share/${a.id}`,
+      url: `https://guauai.ainertia.io/share/${a.id}`,
     });
   }
 

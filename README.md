@@ -4,8 +4,8 @@
 > Record your dog. Get instant interpretation. Know what they need.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://dogspeak-production.up.railway.app)
-[![Dashboard](https://img.shields.io/badge/Dashboard-Live-blueviolet)](https://dogspeak-production.up.railway.app/dashboard)
+[![Demo](https://img.shields.io/badge/Demo-Live-brightgreen)](https://guauai.ainertia.io)
+[![Dashboard](https://img.shields.io/badge/Dashboard-Live-blueviolet)](https://guauai.ainertia.io/dashboard)
 [![Built with gpt-audio](https://img.shields.io/badge/Powered%20by-gpt--audio-412991)](https://openai.com)
 [![Made by Ainertia](https://img.shields.io/badge/Made%20by-Ainertia%20Capital-00C896)](https://ainertia.ai)
 [![Stars](https://img.shields.io/github/stars/JoseALemos/guauai?style=social)](https://github.com/JoseALemos/guauai)
@@ -33,8 +33,8 @@ Graba cualquier sonido de tu perro — ladrido, gemido, gruñido, aullido — y 
 
 | URL | Descripción |
 |---|---|
-| 👉 [Analizador](https://dogspeak-production.up.railway.app) | App web — graba y analiza al instante |
-| 📊 [Dashboard](https://dogspeak-production.up.railway.app/dashboard) | Panel completo con perfiles, historial y gráficas |
+| 👉 [Analizador](https://guauai.ainertia.io) | App web — graba y analiza al instante |
+| 📊 [Dashboard](https://guauai.ainertia.io/dashboard) | Panel completo con perfiles, historial y gráficas |
 
 ---
 
