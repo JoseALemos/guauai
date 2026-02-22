@@ -4,6 +4,13 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GuauAI — Habla con tu perro</title>
+  <meta name="description" content="Motor de IA para entender las vocalizaciones de tu perro"/>
+  <meta name="theme-color" content="#7c3aed"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="GuauAI"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/icon-192.png"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -384,6 +391,24 @@ let animationId = null;
 let analyserNode = null;
 let history = [];
 
+// ── PERFILES PERSISTENTES ─────────────────────────────────────────────────────
+const STORAGE_KEY = 'guauai_profile';
+function saveProfile() {
+  const name = document.getElementById('dogName').value;
+  const breed = document.getElementById('dogBreed').value;
+  if (name) localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, breed }));
+}
+function loadProfile() {
+  try {
+    const p = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if (p.name) document.getElementById('dogName').value = p.name;
+    if (p.breed) document.getElementById('dogBreed').value = p.breed;
+  } catch {}
+}
+document.getElementById('dogName').addEventListener('change', saveProfile);
+document.getElementById('dogBreed').addEventListener('change', saveProfile);
+loadProfile();
+
 // Waveform
 const canvas = document.getElementById('waveform');
 const ctx = canvas.getContext('2d');
@@ -621,11 +646,14 @@ function addToHistory(data) {
   const a = data.analysis;
   const entry = {
     emotion: a.estado_emocional,
+    need: a.necesidad,
+    intensity: a.intensidad,
+    conf: Math.round((a.confianza || 0) * 100),
     msg: a.mensaje_interpretado,
     time: new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'})
   };
   history.unshift(entry);
-  if (history.length > 10) history.pop();
+  if (history.length > 20) history.pop();
   renderHistory();
 }
 
@@ -635,14 +663,18 @@ function renderHistory() {
     <div class="history-item">
       <span class="history-emoji">${EMOTION_EMOJI[h.emotion] || '🐶'}</span>
       <div class="history-info">
-        <div class="emotion">${h.emotion}</div>
+        <div class="emotion">${h.emotion}${h.conf ? ` · ${h.conf}%` : ''}</div>
         <div class="msg">"${h.msg}"</div>
       </div>
       <div class="history-info" style="flex:0; text-align:right">
         <div class="time">${h.time}</div>
       </div>
     </div>
-  `).join('');
+  `).join('') + `
+    <button class="try-again-btn" onclick="exportHistory()" style="margin-top:0.75rem">
+      📥 Exportar CSV
+    </button>
+  `;
 }
 
 function showError(msg) {
@@ -660,6 +692,39 @@ function resetRecorder() {
   resultEl.classList.remove('visible');
   errorEl.classList.remove('visible');
   drawIdle();
+}
+
+// ── EXPORT HISTORIAL ──────────────────────────────────────────────────────────
+function exportHistory() {
+  if (!history.length) return;
+  const dog = document.getElementById('dogName').value || 'MiPerro';
+  const csv = ['Hora,Estado,Necesidad,Intensidad,Confianza,Mensaje']
+    .concat(history.map(h => `${h.time},"${h.emotion}","${h.need||''}","${h.intensity||''}",${h.conf||''},"${h.msg}"`))
+    .join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `guauai_${dog}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ── PWA INSTALL ───────────────────────────────────────────────────────────────
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'block';
+});
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'none';
+});
+
+// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
 </script>
 </body>
