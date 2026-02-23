@@ -216,6 +216,51 @@
       .dog-card:hover { transform: none; border-color: var(--border); }
       .btn-sm:hover { background: var(--purple); }
     }
+    /* ── RECORDER (Analizador integrado) ─────────────────────────── */
+    .rec-wrap { max-width: 480px; }
+    #recWaveform { width:100%; height:56px; border-radius:10px; background:rgba(124,58,237,.07); border:1px solid var(--border); display:block; }
+    .rec-controls { display:flex; flex-direction:column; align-items:center; gap:.75rem; margin-top:.75rem; }
+    .rec-btn {
+      width:72px; height:72px; border-radius:50%; border:none;
+      background:linear-gradient(135deg,var(--purple),var(--purple2));
+      color:#fff; font-size:1.6rem; cursor:pointer;
+      transition:transform .15s; box-shadow:0 0 0 0 rgba(124,58,237,.4);
+    }
+    .rec-btn:hover { transform:scale(1.06); }
+    .rec-btn.recording { background:linear-gradient(135deg,#c81e1e,#ef4444); animation:rec-pulse 1.5s ease-out infinite; }
+    @keyframes rec-pulse { 0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)} 70%{box-shadow:0 0 0 18px rgba(239,68,68,0)} 100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} }
+    .rec-timer { font-size:.95rem; font-weight:700; color:var(--muted); letter-spacing:2px; font-variant-numeric:tabular-nums; }
+    .rec-timer.recording { color:#ef4444; }
+    .rec-status { font-size:.8rem; color:var(--muted); text-align:center; }
+    .rec-analyze-btn {
+      width:100%; background:linear-gradient(135deg,var(--purple),var(--purple2));
+      color:#fff; border:none; border-radius:100px; padding:.875rem; font-weight:800;
+      font-size:.95rem; cursor:pointer; display:none; transition:opacity .2s;
+    }
+    .rec-analyze-btn.visible { display:block; }
+    .rec-analyze-btn:disabled { opacity:.5; cursor:not-allowed; }
+    .rec-loader { display:none; align-items:center; justify-content:center; gap:.75rem; padding:.75rem 0; }
+    .rec-loader.visible { display:flex; }
+    .rec-spinner { width:28px; height:28px; border:2px solid var(--border); border-top-color:var(--purple2); border-radius:50%; animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .rec-error { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.2); border-radius:10px; padding:.875rem; color:#fca5a5; font-size:.875rem; display:none; margin-top:.5rem; }
+    .rec-error.visible { display:block; }
+    /* Result */
+    .rec-result { display:none; }
+    .rec-result.visible { display:block; }
+    .emo-badge { display:inline-flex; align-items:center; gap:.4rem; background:rgba(124,58,237,.15); border:1px solid rgba(124,58,237,.3); border-radius:100px; padding:.35rem .9rem; font-weight:700; font-size:.8rem; color:var(--purple2); margin-bottom:.875rem; text-transform:uppercase; }
+    .msg-bubble { background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(168,85,247,.08)); border:1px solid rgba(124,58,237,.2); border-radius:14px 14px 14px 4px; padding:1rem; margin-bottom:.875rem; }
+    .msg-bubble p { font-size:1rem; font-weight:600; line-height:1.45; }
+    .rec-meta { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin-bottom:.875rem; }
+    .rec-meta-item { background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:9px; padding:.6rem .875rem; }
+    .rec-meta-item .lbl { font-size:.67rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.25rem; }
+    .rec-meta-item .val { font-size:.875rem; font-weight:700; }
+    .conf-bar { width:100%; height:5px; background:var(--border); border-radius:100px; overflow:hidden; margin-top:.35rem; }
+    .conf-fill { height:100%; background:linear-gradient(90deg,var(--purple),var(--purple2)); border-radius:100px; transition:width 1s ease; }
+    .rec-reco { background:rgba(34,197,94,.08); border:1px solid rgba(34,197,94,.2); border-radius:9px; padding:.7rem .875rem; font-size:.82rem; color:#86efac; display:flex; gap:.5rem; margin-bottom:.875rem; }
+    .try-btn { width:100%; background:transparent; border:1px solid var(--border); border-radius:100px; padding:.7rem; color:var(--muted); font-weight:600; font-size:.875rem; cursor:pointer; transition:border-color .2s,color .2s; }
+    .try-btn:hover { border-color:var(--purple); color:var(--purple2); }
+    @media (max-width:480px) { .rec-meta { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -321,7 +366,8 @@
     <!-- ANALYZER -->
     <div class="page" id="page-analyzer">
       <div class="page-header"><h2>Analizar Sonido</h2></div>
-      <div style="max-width:480px">
+      <div class="rec-wrap">
+        <!-- Selector de perro -->
         <div class="card" style="margin-bottom:1rem">
           <div class="field"><label>Perro</label>
             <select id="analyzerDog" style="width:100%;padding:.75rem 1rem;background:var(--bg3);border:1px solid var(--border);border-radius:.75rem;color:var(--text);font-size:.95rem;outline:none">
@@ -329,9 +375,30 @@
             </select>
           </div>
         </div>
-        <a href="/" style="display:flex;align-items:center;justify-content:center;gap:.75rem;padding:1.5rem;background:linear-gradient(135deg,#7c3aed22,#a78bfa11);border:1px solid #7c3aed44;border-radius:1.25rem;color:#a78bfa;font-size:1.05rem;font-weight:700;text-decoration:none;transition:background .2s" onmouseover="this.style.background='linear-gradient(135deg,#7c3aed44,#a78bfa22)'" onmouseout="this.style.background='linear-gradient(135deg,#7c3aed22,#a78bfa11)'">
-          🎙️ Abrir analizador de sonido →
-        </a>
+
+        <!-- Recorder -->
+        <div class="card" style="margin-bottom:1rem">
+          <canvas id="recWaveform"></canvas>
+          <div class="rec-controls">
+            <div class="rec-timer" id="recTimer">00:00</div>
+            <button class="rec-btn" id="recBtn" title="Grabar">🎙️</button>
+            <p class="rec-status" id="recStatus">Pulsa para grabar el sonido de tu perro</p>
+          </div>
+        </div>
+
+        <button class="rec-analyze-btn" id="recAnalyzeBtn">🔍 Analizar lo que dice</button>
+
+        <!-- Loader -->
+        <div class="rec-loader card" id="recLoader" style="margin-top:.75rem">
+          <div class="rec-spinner"></div>
+          <span style="color:var(--muted);font-size:.85rem">Analizando vocalizaciones...</span>
+        </div>
+
+        <!-- Error -->
+        <div class="rec-error" id="recError"></div>
+
+        <!-- Resultado -->
+        <div class="card rec-result" id="recResult" style="margin-top:.75rem"></div>
       </div>
     </div>
 
@@ -757,6 +824,154 @@ async function loadAlerts() {
     </div>
   `).join('');
 }
+
+// ── RECORDER INTEGRADO ──────────────────────────────────────────
+(function() {
+  const EMOTION_EMOJI = { ansioso:'😰',tranquilo:'😌',excitado:'🤩',asustado:'😨',alerta:'⚡',juguetón:'🎾',dolorido:'🤕',agresivo:'😡',frustrado:'😤',feliz:'😄',happy:'😄',anxious:'😰',scared:'😨',excited:'🤩',playful:'🎾',painful:'🤕',calm:'😌',alert:'⚡' };
+  let mrec = null, chunks = [], blob = null, timerIv = null, secs = 0, animId = null;
+
+  const recBtn = document.getElementById('recBtn');
+  const recAnalyzeBtn = document.getElementById('recAnalyzeBtn');
+  const recTimer = document.getElementById('recTimer');
+  const recStatus = document.getElementById('recStatus');
+  const recLoader = document.getElementById('recLoader');
+  const recError = document.getElementById('recError');
+  const recResult = document.getElementById('recResult');
+  const recCanvas = document.getElementById('recWaveform');
+  const rctx = recCanvas ? recCanvas.getContext('2d') : null;
+
+  function resizeRec() {
+    if (!recCanvas) return;
+    recCanvas.width = recCanvas.offsetWidth * devicePixelRatio;
+    recCanvas.height = recCanvas.offsetHeight * devicePixelRatio;
+    rctx.scale(devicePixelRatio, devicePixelRatio);
+    drawIdle();
+  }
+  function drawIdle() {
+    if (!rctx) return;
+    const w = recCanvas.offsetWidth, h = recCanvas.offsetHeight;
+    rctx.clearRect(0,0,w,h);
+    rctx.strokeStyle = 'rgba(124,58,237,.2)'; rctx.lineWidth = 1.5;
+    rctx.beginPath(); rctx.moveTo(0,h/2); rctx.lineTo(w,h/2); rctx.stroke();
+  }
+  function drawWave(data) {
+    if (!rctx) return;
+    const w = recCanvas.offsetWidth, h = recCanvas.offsetHeight;
+    rctx.clearRect(0,0,w,h);
+    rctx.strokeStyle = 'rgba(168,85,247,.8)'; rctx.lineWidth = 2;
+    rctx.beginPath();
+    const sw = w / data.length; let x = 0;
+    for (let i = 0; i < data.length; i++) {
+      const y = (data[i]/128.0*h)/2;
+      i===0 ? rctx.moveTo(x,y) : rctx.lineTo(x,y); x+=sw;
+    }
+    rctx.lineTo(w,h/2); rctx.stroke();
+  }
+  function fmt(s) { return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+  if (recBtn) recBtn.addEventListener('click', async () => {
+    if (mrec && mrec.state === 'recording') { stopRec(); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const actx = new AudioContext();
+      const src = actx.createMediaStreamSource(stream);
+      const an = actx.createAnalyser(); an.fftSize = 512;
+      src.connect(an);
+      const da = new Uint8Array(an.frequencyBinCount);
+      const loop = () => { an.getByteTimeDomainData(da); drawWave(da); animId = requestAnimationFrame(loop); };
+      loop();
+      chunks = []; mrec = new MediaRecorder(stream, { mimeType:'audio/webm' });
+      mrec.ondataavailable = e => { if (e.data.size>0) chunks.push(e.data); };
+      mrec.onstop = () => { blob = new Blob(chunks,{type:'audio/webm'}); stream.getTracks().forEach(t=>t.stop()); cancelAnimationFrame(animId); drawIdle(); };
+      mrec.start(100);
+      recBtn.textContent = '⏹️'; recBtn.classList.add('recording');
+      recStatus.textContent = 'Grabando... pulsa para detener';
+      recAnalyzeBtn.classList.remove('visible'); recResult.classList.remove('visible');
+      recError.classList.remove('visible');
+      secs = 0; recTimer.textContent = '00:00'; recTimer.classList.add('recording');
+      timerIv = setInterval(() => { secs++; recTimer.textContent = fmt(secs); if(secs>=30) stopRec(); }, 1000);
+    } catch(e) { showRecError('No se pudo acceder al micrófono: ' + e.message); }
+  });
+
+  function stopRec() {
+    if (mrec && mrec.state==='recording') mrec.stop();
+    clearInterval(timerIv);
+    recBtn.textContent = '🎙️'; recBtn.classList.remove('recording');
+    recTimer.classList.remove('recording');
+    if (secs>0) { recStatus.textContent = `Audio listo (${fmt(secs)}) — pulsa analizar`; recAnalyzeBtn.classList.add('visible'); }
+    else { recStatus.textContent = 'Pulsa para grabar el sonido de tu perro'; }
+  }
+
+  if (recAnalyzeBtn) recAnalyzeBtn.addEventListener('click', async () => {
+    if (!blob) return;
+    recAnalyzeBtn.disabled = true;
+    recLoader.classList.add('visible');
+    recResult.classList.remove('visible');
+    recError.classList.remove('visible');
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = async () => {
+      try {
+        const b64 = reader.result.split(',')[1];
+        const dogId = document.getElementById('analyzerDog')?.value || null;
+        const dogOpt = document.getElementById('analyzerDog');
+        const dogName = dogOpt && dogOpt.selectedIndex > 0 ? dogOpt.options[dogOpt.selectedIndex].text.split(' (')[0] : 'Mi perro';
+        const headers = {'Content-Type':'application/json'};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/audio/analyze-base64', {
+          method:'POST', headers,
+          body: JSON.stringify({ audio_base64:b64, mime_type:'audio/webm', lang: navigator.language?.slice(0,2)||'es', dog_name:dogName, dog_id:dogId||undefined })
+        });
+        recLoader.classList.remove('visible');
+        if (!res.ok) { const e=await res.json(); showRecError(e.error||'Error al analizar'); recAnalyzeBtn.disabled=false; return; }
+        const data = await res.json();
+        renderRecResult(data);
+        recAnalyzeBtn.classList.remove('visible');
+        recAnalyzeBtn.disabled = false;
+        // Recargar historial si está visible
+        if (document.getElementById('page-history')?.classList.contains('active')) loadFullHistory();
+      } catch(e) { recLoader.classList.remove('visible'); recAnalyzeBtn.disabled=false; showRecError('Error de conexión: '+e.message); }
+    };
+  });
+
+  function renderRecResult(data) {
+    const a = data.analysis;
+    const emoji = EMOTION_EMOJI[a.estado_emocional] || '🐶';
+    const conf = Math.round((a.confianza||0)*100);
+    recResult.innerHTML = `
+      <div class="emo-badge">${emoji} ${(a.estado_emocional||'').toUpperCase()}</div>
+      <div class="msg-bubble"><p>"${a.mensaje_interpretado||'...'}"</p></div>
+      <div class="rec-meta">
+        <div class="rec-meta-item"><div class="lbl">Necesidad</div><div class="val">${a.necesidad||'—'}</div></div>
+        <div class="rec-meta-item"><div class="lbl">Vocalización</div><div class="val">${a.tipo_vocalizacion||'—'}</div></div>
+        <div class="rec-meta-item"><div class="lbl">Intensidad</div><div class="val">${(a.intensidad||'—').toUpperCase()}</div></div>
+        <div class="rec-meta-item"><div class="lbl">Confianza</div><div class="val">${conf}%</div><div class="conf-bar"><div class="conf-fill" style="width:${conf}%"></div></div></div>
+      </div>
+      ${a.recomendacion_dueno ? `<div class="rec-reco"><span>💡</span><span>${a.recomendacion_dueno}</span></div>` : ''}
+      <button class="try-btn" onclick="recReset()">🔄 Grabar de nuevo</button>`;
+    recResult.classList.add('visible');
+  }
+
+  function showRecError(msg) { recError.textContent = '⚠️ '+msg; recError.classList.add('visible'); }
+
+  window.recReset = function() {
+    blob = null; secs = 0; recTimer.textContent='00:00';
+    recStatus.textContent='Pulsa para grabar el sonido de tu perro';
+    recAnalyzeBtn.classList.remove('visible');
+    recResult.classList.remove('visible');
+    recError.classList.remove('visible');
+    drawIdle();
+  };
+
+  window.addEventListener('resize', resizeRec);
+  // Init cuando el canvas esté visible (al navegar a la pestaña)
+  const origNav = window.navigate;
+  window.navigate = function(page, el) {
+    origNav && origNav(page, el);
+    if (page === 'analyzer') setTimeout(resizeRec, 50);
+  };
+  setTimeout(resizeRec, 100);
+})();
 
 // ── SIDEBAR MÓVIL ────────────────────────────────────────────────
 function toggleSidebar() {
