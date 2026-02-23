@@ -8,6 +8,10 @@
   <meta property="og:title" content="GuauAI 🐾"/>
   <meta property="og:description" id="ogDesc" content="Mira lo que dijo mi perro"/>
   <meta property="og:image" content="https://guauai.ainertia.io/icon-512.png"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
   <meta name="theme-color" content="#7c3aed"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -59,7 +63,7 @@ fetch(`/api/share/${id}`)
     document.title = `GuauAI — ${data.dog_name||'Mi perro'} dice: ${data.estado_emocional}`;
 
     document.getElementById('card').innerHTML = `
-      <div class="logo">🐾 GuauAI</div>
+      <div class="logo" style="display:flex;align-items:center;justify-content:center;gap:.5rem"><img src="/icon-192.png" alt="GuauAI" style="width:28px;height:28px;border-radius:8px"/>GuauAI</div>
       ${dogInfo ? `<div class="dog-info">🐶 ${dogInfo} · ${date}</div>` : `<div class="dog-info">${date}</div>`}
       <span class="emoji">${emoji}</span>
       <div class="emotion" style="color:${color}">${data.estado_emocional?.toUpperCase()}</div>

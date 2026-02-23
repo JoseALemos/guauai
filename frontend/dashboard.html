@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GuauAI — Dashboard</title>
   <meta name="theme-color" content="#7c3aed"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
   <link rel="manifest" href="/manifest.json"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -282,7 +286,8 @@
 <div id="authScreen">
   <div class="auth-card">
     <div class="auth-logo">
-      <h1>Guau<span>AI</span> 🐾</h1>
+      <img src="/icon-192.png" alt="GuauAI" style="width:72px;height:72px;border-radius:20px;margin-bottom:.75rem"/>
+      <h1>Guau<span>AI</span></h1>
       <p data-i18n="d_tagline">Habla con tu perro</p>
     </div>
     <div class="auth-tabs">
@@ -308,14 +313,14 @@
 <!-- Topbar móvil (visible solo en móvil via CSS) -->
 <div class="topbar" style="display:none" id="topbar">
   <button class="menu-btn" onclick="toggleSidebar()" aria-label="Menú">☰</button>
-  <div class="topbar-title">Guau<span>AI</span></div>
+  <div class="topbar-title" style="display:flex;align-items:center;gap:.4rem"><img src="/icon-192.png" alt="" style="width:22px;height:22px;border-radius:6px"/>Guau<span>AI</span></div>
   <div id="topbarUser" style="font-size:.75rem;color:var(--muted)"></div>
 </div>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <div id="app">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-logo"><h1>Guau<span>AI</span></h1></div>
+    <div class="sidebar-logo" style="display:flex;align-items:center;gap:.6rem"><img src="/icon-192.png" alt="" style="width:32px;height:32px;border-radius:8px"/><h1>Guau<span>AI</span></h1></div>
     <nav>
       <a href="#" class="active" data-page="overview" onclick="navigate('overview',this)">📊 <span data-i18n="d_nav_overview">Resumen</span></a>
       <a href="#" data-page="dogs" onclick="navigate('dogs',this)">🐶 <span data-i18n="d_nav_dogs">Mis Perros</span></a>
