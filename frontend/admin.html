@@ -102,6 +102,22 @@
     .refresh-btn:hover { border-color: var(--purple); }
     .last-updated { font-size: .75rem; color: var(--muted); }
 
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(10,10,15,0.97); backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom,0px));
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem; z-index: 50;
+    }
+    .bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: .2rem;
+      color: var(--muted); text-decoration: none; font-size: .7rem;
+      padding: .25rem .9rem; border-radius: 10px; transition: color .2s;
+    }
+    .bottom-nav a:hover, .bottom-nav a.active { color: var(--text); }
+    .bottom-nav a em { display: block; font-size: 1.2rem; font-style: normal; }
+
     /* RESPONSIVE */
     @media (max-width: 900px) {
       .charts-row { grid-template-columns: 1fr 1fr; }
@@ -112,6 +128,7 @@
       .stat-value { font-size: 1.6rem; }
       td, th { padding: .6rem .75rem; font-size: .82rem; }
     }
+    #panel .container { padding-bottom: 5rem; }
   </style>
 </head>
 <body>
@@ -198,6 +215,13 @@
 
   </div>
 </div>
+
+<nav class="bottom-nav">
+  <a href="/"><em>🎤</em>Analizar</a>
+  <a href="/dashboard"><em>📊</em>Dashboard</a>
+  <a href="/admin" class="active"><em>🔐</em>Admin</a>
+  <a href="https://github.com/JoseALemos/guauai" target="_blank"><em>⭐</em>GitHub</a>
+</nav>
 
 <script>
 const API = '/api/admin';
