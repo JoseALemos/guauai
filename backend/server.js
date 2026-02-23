@@ -47,6 +47,11 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(staticDir, 'dashboard.html'));
 });
 
+// Admin panel
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(staticDir, 'admin.html'));
+});
+
 // Share — análisis públicos
 app.get('/share/:id', (req, res) => {
   res.sendFile(path.join(staticDir, 'share.html'));

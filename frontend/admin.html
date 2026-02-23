@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuauAI — Panel Administrador</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --bg2: #111118; --bg3: #1a1a28;
+      --border: #1e1e30; --purple: #7c3aed; --purple2: #a855f7;
+      --text: #f1f5f9; --muted: #64748b;
+      --green: #22c55e; --yellow: #eab308; --red: #ef4444; --blue: #3b82f6;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* TOPBAR */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 0.875rem 1.5rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .topbar-logo { font-size: 1.1rem; font-weight: 900; }
+    .topbar-logo span { color: var(--purple2); }
+    .topbar-sub { font-size: 0.75rem; color: var(--muted); background: rgba(124,58,237,.15); border: 1px solid rgba(124,58,237,.3); border-radius: 6px; padding: 0.2rem 0.6rem; }
+    .topbar-spacer { flex: 1; }
+    .topbar-user { font-size: 0.8rem; color: var(--muted); }
+
+    /* LAYOUT */
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* AUTH GATE */
+    #authGate {
+      display: flex; align-items: center; justify-content: center;
+      min-height: calc(100vh - 56px);
+    }
+    .auth-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 1.5rem;
+      padding: 2.5rem; width: 100%; max-width: 380px; text-align: center;
+    }
+    .auth-card h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .auth-card p { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .auth-input {
+      width: 100%; padding: 0.8rem 1rem; background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-size: 0.95rem; outline: none; margin-bottom: 1rem;
+    }
+    .auth-input:focus { border-color: var(--purple); }
+    .btn-primary {
+      width: 100%; padding: 0.875rem; background: var(--purple); color: white;
+      border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .auth-error { color: var(--red); font-size: 0.82rem; margin-top: 0.5rem; }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem;
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 0.5rem; }
+    .stat-value { font-size: 2rem; font-weight: 900; line-height: 1; }
+    .stat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.3rem; }
+    .stat-green { color: var(--green); }
+    .stat-purple { color: var(--purple2); }
+    .stat-yellow { color: var(--yellow); }
+    .stat-blue { color: var(--blue); }
+
+    /* CHARTS */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+    .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; padding: 1.25rem; }
+    .chart-card h3 { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+
+    /* TABLE */
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem; }
+    .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-header h3 { font-size: 0.9rem; font-weight: 700; }
+    .badge { font-size: 0.72rem; background: rgba(124,58,237,.15); color: var(--purple2); border-radius: 6px; padding: .2rem .6rem; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: .75rem 1rem; border-bottom: 1px solid var(--border); font-weight: 500; }
+    td { padding: .7rem 1rem; border-bottom: 1px solid #13131f; font-size: 0.875rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    .pill { display: inline-block; border-radius: 100px; padding: .2rem .65rem; font-size: .72rem; font-weight: 600; }
+    .pill-green { background: rgba(34,197,94,.12); color: var(--green); }
+    .pill-red { background: rgba(239,68,68,.12); color: var(--red); }
+    .pill-yellow { background: rgba(234,179,8,.12); color: var(--yellow); }
+
+    /* SECTION TITLE */
+    .section-title { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .75rem; }
+
+    /* REFRESH */
+    .refresh-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .refresh-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: .4rem .9rem; font-size: .8rem; cursor: pointer; transition: border-color .2s; }
+    .refresh-btn:hover { border-color: var(--purple); }
+    .last-updated { font-size: .75rem; color: var(--muted); }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .charts-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .charts-row { grid-template-columns: 1fr; }
+      .container { padding: 1rem; }
+      .stat-value { font-size: 1.6rem; }
+      td, th { padding: .6rem .75rem; font-size: .82rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Guau<span>AI</span></div>
+  <div class="topbar-sub">Admin</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-user" id="topbarInfo">—</div>
+</div>
+
+<!-- AUTH GATE -->
+<div id="authGate">
+  <div class="auth-card">
+    <div style="font-size:2.5rem;margin-bottom:1rem">🔐</div>
+    <h2>Panel Administrador</h2>
+    <p>Introduce la clave de acceso para ver las métricas de GuauAI</p>
+    <input type="password" id="keyInput" class="auth-input" placeholder="Admin secret key" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn-primary" onclick="doLogin()">Acceder</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div id="panel" style="display:none">
+  <div class="container">
+
+    <div class="refresh-row">
+      <div class="last-updated" id="lastUpdated">—</div>
+      <button class="refresh-btn" onclick="loadStats()">↻ Actualizar</button>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="stat-label">Usuarios totales</div><div class="stat-value stat-purple" id="sUsers">—</div></div>
+      <div class="stat-card"><div class="stat-label">Perros registrados</div><div class="stat-value stat-green" id="sDogs">—</div></div>
+      <div class="stat-card"><div class="stat-label">Análisis totales</div><div class="stat-value stat-blue" id="sAnalyses">—</div></div>
+      <div class="stat-card"><div class="stat-label">Análisis hoy</div><div class="stat-value stat-yellow" id="sToday">—</div></div>
+      <div class="stat-card"><div class="stat-label">Análisis 7 días</div><div class="stat-value" id="s7d">—</div></div>
+      <div class="stat-card"><div class="stat-label">DAU (activos hoy)</div><div class="stat-value stat-green" id="sDAU">—</div></div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Top Emociones</h3>
+        <div style="position:relative;height:180px"><canvas id="chartEmotions"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Top Razas</h3>
+        <div style="position:relative;height:180px"><canvas id="chartBreeds"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Actividad (7 días)</h3>
+        <div style="position:relative;height:180px"><canvas id="chartActivity"></canvas></div>
+      </div>
+    </div>
+
+    <!-- USUARIOS TABLE -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Usuarios recientes</h3>
+        <span class="badge" id="userCount">0 usuarios</span>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Perros</th>
+              <th>Análisis</th>
+              <th>Último acceso</th>
+              <th>Registro</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = '/api/admin';
+let adminKey = localStorage.getItem('guauai_admin_key') || '';
+let emotionChart = null, breedChart = null, activityChart = null;
+
+function doLogin() {
+  const k = document.getElementById('keyInput').value.trim();
+  if (!k) return;
+  adminKey = k;
+  loadStats();
+}
+
+async function loadStats() {
+  document.getElementById('authError').textContent = '';
+  try {
+    const [statsRes, usersRes] = await Promise.all([
+      fetch(`${API}/stats`, { headers: { 'X-Admin-Key': adminKey } }),
+      fetch(`${API}/users`, { headers: { 'X-Admin-Key': adminKey } })
+    ]);
+
+    if (statsRes.status === 401 || statsRes.status === 403) {
+      document.getElementById('authError').textContent = 'Clave incorrecta';
+      return;
+    }
+
+    const stats = await statsRes.json();
+    const users = await usersRes.json();
+
+    // Store key on success
+    localStorage.setItem('guauai_admin_key', adminKey);
+
+    // Show panel
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('panel').style.display = '';
+
+    // Update topbar
+    document.getElementById('topbarInfo').textContent = `Ainertia Capital · ${new Date().toLocaleDateString('es-ES')}`;
+    document.getElementById('lastUpdated').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-ES')}`;
+
+    // Stat cards
+    document.getElementById('sUsers').textContent = stats.users ?? '—';
+    document.getElementById('sDogs').textContent = stats.dogs ?? '—';
+    document.getElementById('sAnalyses').textContent = stats.analyses ?? '—';
+    document.getElementById('sToday').textContent = stats.analyses_today ?? '—';
+    document.getElementById('s7d').textContent = stats.analyses_7d ?? '—';
+    document.getElementById('sDAU').textContent = stats.dau ?? '—';
+
+    // Charts
+    renderEmotionChart(stats.top_emotions || []);
+    renderBreedChart(stats.top_breeds || []);
+    renderActivityChart(stats.daily_activity || []);
+
+    // Users table
+    renderUsers(users);
+    document.getElementById('userCount').textContent = `${users.length} usuarios`;
+
+  } catch (e) {
+    document.getElementById('authError').textContent = 'Error de conexión: ' + e.message;
+  }
+}
+
+function renderEmotionChart(data) {
+  const ctx = document.getElementById('chartEmotions');
+  if (emotionChart) emotionChart.destroy();
+  if (!data.length) return;
+  emotionChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.estado_emocional || d.label),
+      datasets: [{ data: data.map(d => parseInt(d.n || d.count)), backgroundColor: ['#7c3aed','#a855f7','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6','#f97316','#84cc16'] }]
+    },
+    options: { plugins: { legend: { position: 'right', labels: { color: '#f1f5f9', font: { size: 10 }, boxWidth: 12 } } }, maintainAspectRatio: false }
+  });
+}
+
+function renderBreedChart(data) {
+  const ctx = document.getElementById('chartBreeds');
+  if (breedChart) breedChart.destroy();
+  if (!data.length) return;
+  breedChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.breed || 'Sin raza').map(b => b.length > 12 ? b.slice(0,12)+'…' : b),
+      datasets: [{ data: data.map(d => parseInt(d.n || d.count)), backgroundColor: '#7c3aed99', borderColor: '#a855f7', borderWidth: 1, borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: '#64748b' }, grid: { color: '#1e1e30' } }, y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } } },
+      maintainAspectRatio: false
+    }
+  });
+}
+
+function renderActivityChart(data) {
+  const ctx = document.getElementById('chartActivity');
+  if (activityChart) activityChart.destroy();
+  if (!data.length) return;
+  activityChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map(d => new Date(d.day || d.date).toLocaleDateString('es', { weekday: 'short', day: 'numeric' })),
+      datasets: [{ data: data.map(d => parseInt(d.n || d.count)), borderColor: '#7c3aed', backgroundColor: '#7c3aed22', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#a855f7' }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e1e30' } }, y: { ticks: { color: '#64748b' }, grid: { color: '#1e1e30' }, beginAtZero: true } },
+      maintainAspectRatio: false
+    }
+  });
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('usersBody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">Sin usuarios aún</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map((u, i) => `
+    <tr>
+      <td style="color:var(--muted)">${i + 1}</td>
+      <td><strong>${escHtml(u.name || '—')}</strong></td>
+      <td style="color:var(--muted)">${escHtml(u.email || '—')}</td>
+      <td>${u.dog_count ?? 0}</td>
+      <td>${u.analysis_count ?? 0}</td>
+      <td style="color:var(--muted)">${u.last_active ? new Date(u.last_active).toLocaleDateString('es-ES') : '—'}</td>
+      <td style="color:var(--muted);font-size:.8rem">${u.created_at ? new Date(u.created_at).toLocaleDateString('es-ES') : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Auto-login si hay key guardada
+if (adminKey) loadStats();
+</script>
+</body>
+</html>

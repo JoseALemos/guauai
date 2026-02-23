@@ -9,6 +9,7 @@
 [![Built with gpt-audio](https://img.shields.io/badge/Powered%20by-gpt--audio-412991)](https://openai.com)
 [![Made by Ainertia](https://img.shields.io/badge/Made%20by-Ainertia%20Capital-00C896)](https://ainertia.ai)
 [![Stars](https://img.shields.io/github/stars/JoseALemos/guauai?style=social)](https://github.com/JoseALemos/guauai)
+[![Forks](https://img.shields.io/github/forks/JoseALemos/guauai?style=social)](https://github.com/JoseALemos/guauai/fork)
 
 ---
 
@@ -224,6 +225,12 @@ git commit -m "feat: descripción"
 git push origin feature/mi-mejora
 # → Pull Request
 ```
+
+---
+
+## 📈 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=JoseALemos/guauai&type=Date)](https://star-history.com/#JoseALemos/guauai&Date)
 
 ---
 
