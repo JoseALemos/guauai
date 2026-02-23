@@ -38,13 +38,17 @@ router.post('/', verifyToken, async (req, res) => {
 /** PATCH /api/dogs/:id — Actualizar */
 router.patch('/:id', verifyToken, async (req, res) => {
   try {
-    const { name, breed, birth_date, weight_kg, notes } = req.body;
+    const { name, breed, birth_date, weight_kg, notes, photo_url } = req.body;
+    // Validar tamaño de foto (max 300KB en base64)
+    if (photo_url && photo_url.length > 400000) {
+      return res.status(400).json({ error: 'Foto demasiado grande (máx 300KB)' });
+    }
     const r = await pool.query(
       `UPDATE dogs SET name=COALESCE($1,name), breed=COALESCE($2,breed),
        birth_date=COALESCE($3,birth_date), weight_kg=COALESCE($4,weight_kg),
-       notes=COALESCE($5,notes), updated_at=NOW()
-       WHERE id=$6 AND user_id=$7 RETURNING *`,
-      [name, breed, birth_date, weight_kg ? parseFloat(weight_kg) : null, notes, req.params.id, req.user.userId]
+       notes=COALESCE($5,notes), photo_url=COALESCE($6,photo_url), updated_at=NOW()
+       WHERE id=$7 AND user_id=$8 RETURNING *`,
+      [name, breed, birth_date, weight_kg ? parseFloat(weight_kg) : null, notes, photo_url || null, req.params.id, req.user.userId]
     );
     if (!r.rows[0]) return res.status(404).json({ error: 'Perro no encontrado' });
     res.json(r.rows[0]);

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GuauAI — Informe Veterinario</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --bg2: #111118; --bg3: #1a1a28;
+      --border: #1e1e30; --purple: #7c3aed; --purple2: #a855f7;
+      --text: #f1f5f9; --muted: #64748b;
+      --green: #22c55e; --yellow: #eab308; --red: #ef4444;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* HEADER */
+    .header {
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: 1rem;
+    }
+    .header-logo { font-size: 1.2rem; font-weight: 900; }
+    .header-logo span { color: var(--purple2); }
+    .header-badge {
+      font-size: 0.7rem; background: rgba(34,197,94,.12); color: var(--green);
+      border: 1px solid rgba(34,197,94,.25); border-radius: 6px; padding: .2rem .6rem; font-weight: 600;
+    }
+    .header-spacer { flex: 1; }
+    .header-sub { font-size: 0.78rem; color: var(--muted); }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+    /* OWNER BANNER */
+    .owner-banner {
+      background: linear-gradient(135deg, rgba(124,58,237,.12), rgba(168,85,247,.08));
+      border: 1px solid rgba(124,58,237,.25); border-radius: 1rem;
+      padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .owner-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--purple2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .owner-info h2 { font-size: 1rem; font-weight: 800; }
+    .owner-info p { font-size: 0.8rem; color: var(--muted); margin-top: .2rem; }
+
+    /* SECTION TITLE */
+    .section-title { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .75rem; }
+
+    /* DOGS GRID */
+    .dogs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .dog-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem;
+      padding: 1.25rem; cursor: pointer; transition: border-color .2s, transform .1s;
+    }
+    .dog-card:hover { border-color: var(--purple2); transform: translateY(-2px); }
+    .dog-card.active { border-color: var(--purple); background: rgba(124,58,237,.08); }
+    .dog-avatar { font-size: 2rem; margin-bottom: .5rem; }
+    .dog-name { font-size: .95rem; font-weight: 700; }
+    .dog-breed { font-size: .75rem; color: var(--muted); margin-top: .15rem; }
+    .dog-meta { margin-top: .75rem; display: flex; flex-wrap: wrap; gap: .5rem; }
+    .dog-chip { font-size: .68rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: .15rem .5rem; color: var(--muted); }
+
+    /* CHARTS ROW */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+    .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; padding: 1.25rem; }
+    .chart-card h3 { font-size: .72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+
+    /* ANALYSES TABLE */
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem; }
+    .card-header { padding: .875rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-header h3 { font-size: .9rem; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: .7rem 1rem; border-bottom: 1px solid var(--border); }
+    td { padding: .65rem 1rem; border-bottom: 1px solid #13131f; font-size: .85rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    /* INTENSITY PILLS */
+    .pill { display: inline-block; border-radius: 100px; padding: .18rem .6rem; font-size: .7rem; font-weight: 600; }
+    .pill-low { background: rgba(34,197,94,.1); color: var(--green); }
+    .pill-medium { background: rgba(234,179,8,.1); color: var(--yellow); }
+    .pill-high { background: rgba(239,68,68,.1); color: var(--red); }
+
+    /* EMPTY / LOADING */
+    .empty { text-align: center; color: var(--muted); padding: 3rem 1rem; font-size: .9rem; }
+
+    /* DISCLAIMER */
+    .disclaimer {
+      background: rgba(234,179,8,.07); border: 1px solid rgba(234,179,8,.2);
+      border-radius: .75rem; padding: .875rem 1rem; font-size: .78rem;
+      color: #fde68a; display: flex; gap: .6rem; margin-bottom: 1.5rem;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 640px) {
+      .charts-row { grid-template-columns: 1fr; }
+      .dogs-grid { grid-template-columns: 1fr 1fr; }
+      .container { padding: 1rem .875rem 3rem; }
+      td, th { padding: .5rem .75rem; font-size: .8rem; }
+      .col-hide { display: none; }
+    }
+    @media (max-width: 380px) {
+      .dogs-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">Guau<span>AI</span></div>
+  <div class="header-badge">Informe Vet</div>
+  <div class="header-spacer"></div>
+  <div class="header-sub">Vista de solo lectura · Confidencial</div>
+</div>
+
+<div class="container">
+
+  <!-- LOADING -->
+  <div id="loading" class="empty">
+    <div style="font-size:2rem;margin-bottom:.75rem">🐾</div>
+    Cargando informe...
+  </div>
+
+  <!-- ERROR -->
+  <div id="errorView" class="empty" style="display:none">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">❌</div>
+    <strong>Enlace inválido</strong><br/>
+    <span style="font-size:.8rem">Este enlace de informe no existe o ha caducado.</span>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content" style="display:none">
+
+    <!-- DISCLAIMER -->
+    <div class="disclaimer">
+      ⚠️ <span>Esta información es orientativa y está basada en análisis de vocalizaciones con IA. No sustituye una evaluación veterinaria presencial.</span>
+    </div>
+
+    <!-- OWNER -->
+    <div class="owner-banner" id="ownerBanner"></div>
+
+    <!-- DOGS -->
+    <div class="section-title">Perros registrados</div>
+    <div class="dogs-grid" id="dogsGrid"></div>
+
+    <!-- DOG DETAIL -->
+    <div id="dogDetail" style="display:none">
+      <div class="section-title" id="detailTitle">Detalle</div>
+      <div class="charts-row">
+        <div class="chart-card"><h3>Emociones (30 días)</h3><div style="position:relative;height:180px"><canvas id="dogChartEmotions"></canvas></div></div>
+        <div class="chart-card"><h3>Análisis por día</h3><div style="position:relative;height:180px"><canvas id="dogChartTimeline"></canvas></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 id="detailHistTitle">Historial de análisis</h3>
+          <span id="detailCount" style="font-size:.75rem;color:var(--muted)"></span>
+        </div>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Emoción</th>
+                <th class="col-hide">Necesidad</th>
+                <th>Intensidad</th>
+                <th class="col-hide">Confianza</th>
+                <th>Mensaje</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="detailBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RECOMENDACIONES RECIENTES -->
+      <div class="card">
+        <div class="card-header"><h3>Últimas recomendaciones IA</h3></div>
+        <div id="recoList" style="padding:.75rem 1.25rem"></div>
+      </div>
+    </div>
+
+    <!-- GLOBAL SUMMARY (all dogs) -->
+    <div class="section-title" style="margin-top:2rem">Resumen global (todos los perros, 30 días)</div>
+    <div class="charts-row">
+      <div class="chart-card"><h3>Distribución emocional</h3><div style="position:relative;height:180px"><canvas id="globalChartEmotions"></canvas></div></div>
+      <div class="chart-card" style="display:flex;flex-direction:column;justify-content:center">
+        <div id="globalSummary"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const EMOTION_EMOJI = { ansioso:'😰',tranquilo:'😌',excitado:'🤩',asustado:'😨',alerta:'⚡',juguetón:'🎾',dolorido:'🤕',agresivo:'😡',frustrado:'😤',feliz:'😄',happy:'😄',anxious:'😰',scared:'😨',excited:'🤩',playful:'🎾',painful:'🤕',calm:'😌',alert:'⚡' };
+const PALETTE = ['#7c3aed','#a855f7','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6','#f97316','#84cc16'];
+
+let data = null;
+let dogEmotionChart = null, dogTimelineChart = null, globalEmotionChart = null;
+
+async function loadVet() {
+  const token = location.pathname.split('/vet/')[1]?.split('/')[0];
+  if (!token) return showError();
+  try {
+    const r = await fetch(`/api/vet/${token}`);
+    if (!r.ok) return showError();
+    data = await r.json();
+    render();
+  } catch (e) { showError(); }
+}
+
+function showError() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('errorView').style.display = '';
+}
+
+function render() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = '';
+
+  // Owner banner
+  const ob = document.getElementById('ownerBanner');
+  ob.innerHTML = `
+    <div class="owner-avatar">🐕</div>
+    <div class="owner-info">
+      <h2>Historial de ${escHtml(data.owner_name)}</h2>
+      <p>${data.dogs.length} perro${data.dogs.length !== 1 ? 's' : ''} · ${data.analyses.length} análisis registrados · Compartido vía GuauAI</p>
+    </div>`;
+
+  // Dogs grid
+  const grid = document.getElementById('dogsGrid');
+  grid.innerHTML = data.dogs.map(d => {
+    const age = d.birth_date ? calcAge(d.birth_date) : null;
+    return `<div class="dog-card" onclick="showDog('${d.id}')" id="dcard-${d.id}">
+      <div class="dog-avatar">🐶</div>
+      <div class="dog-name">${escHtml(d.name)}</div>
+      ${d.breed ? `<div class="dog-breed">${escHtml(d.breed)}</div>` : ''}
+      <div class="dog-meta">
+        ${age ? `<span class="dog-chip">${age}</span>` : ''}
+        ${d.weight_kg ? `<span class="dog-chip">${d.weight_kg} kg</span>` : ''}
+        ${d.total_analyses ? `<span class="dog-chip">${d.total_analyses} análisis</span>` : ''}
+        ${d.emotion_more_common ? `<span class="dog-chip">${EMOTION_EMOJI[d.emotion_more_common]||'🐶'} ${d.emotion_more_common}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('') || '<p style="color:var(--muted);font-size:.875rem">Sin perros registrados</p>';
+
+  // Global emotion chart
+  renderGlobalEmotions();
+
+  // Global summary stats
+  const gs = document.getElementById('globalSummary');
+  const total = data.analyses.length;
+  const last7 = data.analyses.filter(a => new Date(a.created_at) > new Date(Date.now() - 7*24*3600*1000)).length;
+  gs.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:1rem">
+      <div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem">Total análisis</div>
+        <div style="font-size:2.2rem;font-weight:900;color:var(--purple2)">${total}</div>
+      </div>
+      <div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem">Últimos 7 días</div>
+        <div style="font-size:1.8rem;font-weight:900;color:#22c55e">${last7}</div>
+      </div>
+      ${data.emotions_30d[0] ? `<div>
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem">Emoción predominante</div>
+        <div style="font-size:1.1rem;font-weight:700">${EMOTION_EMOJI[data.emotions_30d[0].estado_emocional]||'🐶'} ${data.emotions_30d[0].estado_emocional}</div>
+      </div>` : ''}
+    </div>`;
+
+  // Auto-select first dog
+  if (data.dogs.length) showDog(data.dogs[0].id);
+}
+
+function showDog(dogId) {
+  // Highlight card
+  document.querySelectorAll('.dog-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById('dcard-' + dogId);
+  if (card) card.classList.add('active');
+
+  const dog = data.dogs.find(d => d.id === dogId);
+  const analyses = data.analyses.filter(a => a.dog_id === dogId);
+
+  document.getElementById('dogDetail').style.display = '';
+  document.getElementById('detailTitle').textContent = `Detalle — ${dog?.name || 'Perro'}`;
+  document.getElementById('detailHistTitle').textContent = `Historial de ${dog?.name || 'este perro'}`;
+  document.getElementById('detailCount').textContent = `${analyses.length} registros`;
+
+  // Emotion chart for dog
+  const emotionMap = {};
+  analyses.forEach(a => { if (a.estado_emocional) emotionMap[a.estado_emocional] = (emotionMap[a.estado_emocional]||0)+1; });
+  const ectx = document.getElementById('dogChartEmotions');
+  if (dogEmotionChart) dogEmotionChart.destroy();
+  dogEmotionChart = new Chart(ectx, {
+    type: 'doughnut',
+    data: { labels: Object.keys(emotionMap), datasets: [{ data: Object.values(emotionMap), backgroundColor: PALETTE }] },
+    options: { plugins: { legend: { position: 'right', labels: { color: '#f1f5f9', font: { size: 10 }, boxWidth: 12 } } }, maintainAspectRatio: false }
+  });
+
+  // Timeline chart
+  const timeMap = {};
+  analyses.forEach(a => {
+    const day = a.created_at?.slice(0,10);
+    if (day) timeMap[day] = (timeMap[day]||0)+1;
+  });
+  const days = Object.keys(timeMap).sort().slice(-30);
+  const tctx = document.getElementById('dogChartTimeline');
+  if (dogTimelineChart) dogTimelineChart.destroy();
+  dogTimelineChart = new Chart(tctx, {
+    type: 'line',
+    data: {
+      labels: days.map(d => new Date(d+'T12:00:00').toLocaleDateString('es',{month:'short',day:'numeric'})),
+      datasets: [{ data: days.map(d=>timeMap[d]), borderColor:'#7c3aed', backgroundColor:'#7c3aed22', fill:true, tension:.4, pointRadius:3 }]
+    },
+    options: { plugins:{ legend:{display:false} }, scales:{ x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e1e30'}}, y:{ticks:{color:'#64748b'},grid:{color:'#1e1e30'},beginAtZero:true} }, maintainAspectRatio:false }
+  });
+
+  // History table
+  const tbody = document.getElementById('detailBody');
+  tbody.innerHTML = analyses.slice(0,50).map(a => {
+    const inten = a.intensidad?.toLowerCase() || '';
+    const pillClass = inten === 'alta' || inten === 'high' ? 'pill-high' : inten === 'media' || inten === 'medium' ? 'pill-medium' : 'pill-low';
+    return `<tr>
+      <td>${EMOTION_EMOJI[a.estado_emocional]||'🐶'} ${a.estado_emocional||'—'}</td>
+      <td class="col-hide" style="color:var(--muted)">${a.necesidad||'—'}</td>
+      <td><span class="pill ${pillClass}">${a.intensidad||'—'}</span></td>
+      <td class="col-hide" style="color:var(--muted)">${a.confianza ? Math.round(a.confianza*100)+'%' : '—'}</td>
+      <td style="color:var(--muted);font-size:.8rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.mensaje_interpretado||'—')}</td>
+      <td style="color:var(--muted);font-size:.78rem">${fmtDate(a.created_at)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">Sin análisis para este perro</td></tr>';
+
+  // Recomendaciones
+  const recos = analyses.filter(a => a.recomendacion).slice(0,5);
+  const recoEl = document.getElementById('recoList');
+  recoEl.innerHTML = recos.map(a => `
+    <div style="padding:.625rem 0;border-bottom:1px solid var(--border);display:flex;gap:.75rem;align-items:flex-start">
+      <span style="font-size:1rem">💡</span>
+      <div>
+        <div style="font-size:.82rem;color:var(--text)">${escHtml(a.recomendacion)}</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">${EMOTION_EMOJI[a.estado_emocional]||''} ${a.estado_emocional||''} · ${fmtDate(a.created_at)}</div>
+      </div>
+    </div>`).join('') || '<p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">Sin recomendaciones registradas</p>';
+}
+
+function renderGlobalEmotions() {
+  const map = {};
+  data.emotions_30d.forEach(e => { map[e.estado_emocional] = parseInt(e.n); });
+  if (!Object.keys(map).length) return;
+  const ctx = document.getElementById('globalChartEmotions');
+  if (globalEmotionChart) globalEmotionChart.destroy();
+  globalEmotionChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: Object.keys(map), datasets: [{ data: Object.values(map), backgroundColor: PALETTE }] },
+    options: { plugins: { legend: { position: 'right', labels: { color: '#f1f5f9', font: { size: 10 }, boxWidth: 12 } } }, maintainAspectRatio: false }
+  });
+}
+
+function calcAge(birthDate) {
+  const months = Math.round((Date.now() - new Date(birthDate)) / (1000*60*60*24*30.5));
+  if (months < 24) return `${months} meses`;
+  return `${Math.floor(months/12)} años`;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+loadVet();
+</script>
+</body>
+</html>

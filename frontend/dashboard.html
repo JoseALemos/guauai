@@ -277,7 +277,10 @@
   <main class="main">
     <!-- OVERVIEW -->
     <div class="page active" id="page-overview">
-      <div class="page-header"><h2>Resumen</h2></div>
+      <div class="page-header">
+        <h2>Resumen</h2>
+        <button class="btn-sm btn-outline" onclick="shareWithVet()" title="Generar enlace para veterinario o entrenador">🩺 Compartir con vet</button>
+      </div>
       <div class="cards">
         <div class="card"><div class="card-label">Perros</div><div class="card-value" id="totalDogs">—</div></div>
         <div class="card"><div class="card-label">Análisis totales</div><div class="card-value" id="totalAnalyses">—</div></div>
@@ -360,6 +363,13 @@
   <div class="modal">
     <h3 id="dogModalTitle">Añadir perro</h3>
     <input type="hidden" id="dogModalId"/>
+    <!-- Foto -->
+    <div class="field" style="text-align:center">
+      <div id="dogPhotoPreview" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto .75rem;overflow:hidden;cursor:pointer" onclick="document.getElementById('dogPhotoInput').click()">🐶</div>
+      <input type="file" id="dogPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)"/>
+      <div style="font-size:.72rem;color:var(--muted)">Pulsa la foto para cambiarla</div>
+    </div>
+    <input type="hidden" id="dogModalPhoto"/>
     <div class="field"><label>Nombre *</label><input type="text" id="dogModalName" placeholder="Rex"/></div>
     <div class="field"><label>Raza</label><input type="text" id="dogModalBreed" placeholder="Labrador, Bulldog..."/></div>
     <div class="field"><label>Fecha de nacimiento</label><input type="date" id="dogModalBirth"/></div>
@@ -474,7 +484,7 @@ function renderDogGrid() {
   grid.innerHTML = dogs.map(d => `
     <div class="dog-card" onclick="openDogDetail('${d.id}')">
       <div class="dog-card-top">
-        <div class="dog-avatar">🐶</div>
+        <div class="dog-avatar" style="${d.photo_url ? 'overflow:hidden;padding:0' : ''}">${d.photo_url ? `<img src="${d.photo_url}" style="width:100%;height:100%;object-fit:cover"/>` : '🐶'}</div>
         <div><div class="dog-name">${d.name}</div><div class="dog-breed">${d.breed||'Raza no especificada'}</div></div>
       </div>
       <div class="dog-stats-row">
@@ -488,20 +498,51 @@ function renderDogGrid() {
 function openAddDog() {
   document.getElementById('dogModalTitle').textContent = 'Añadir perro';
   document.getElementById('dogModalId').value = '';
+  document.getElementById('dogModalPhoto').value = '';
   ['Name','Breed','Birth','Weight','Notes'].forEach(f => document.getElementById(`dogModal${f}`).value = '');
+  const prev = document.getElementById('dogPhotoPreview');
+  prev.innerHTML = '🐶'; prev.style.backgroundImage = '';
   document.getElementById('dogModal').classList.add('open');
 }
 
 function closeDogModal() { document.getElementById('dogModal').classList.remove('open'); }
 
+// Compresión de foto client-side con Canvas (máx 300x300 JPEG 0.75)
+function handlePhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Imagen demasiado grande (máx 5MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 300;
+      let w = img.width, h = img.height;
+      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+      else { w = Math.round(w * MAX / h); h = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      document.getElementById('dogModalPhoto').value = dataUrl;
+      const prev = document.getElementById('dogPhotoPreview');
+      prev.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover"/>`;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 async function saveDog() {
   const id = document.getElementById('dogModalId').value;
+  const photoVal = document.getElementById('dogModalPhoto').value;
   const body = {
     name: document.getElementById('dogModalName').value,
     breed: document.getElementById('dogModalBreed').value || null,
     birth_date: document.getElementById('dogModalBirth').value || null,
     weight_kg: document.getElementById('dogModalWeight').value || null,
     notes: document.getElementById('dogModalNotes').value || null,
+    photo_url: photoVal || undefined,
   };
   if (!body.name) return alert('El nombre es obligatorio');
   const url = id ? `${API}/dogs/${id}` : `${API}/dogs`;
@@ -522,7 +563,7 @@ async function openDogDetail(id) {
 
   document.getElementById('dogDetailHeader').innerHTML = `
     <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem">
-      <div class="dog-avatar" style="width:72px;height:72px;font-size:2rem">🐶</div>
+      <div class="dog-avatar" style="width:72px;height:72px;font-size:2rem;${dog.photo_url ? 'overflow:hidden;padding:0' : ''}">${dog.photo_url ? `<img src="${dog.photo_url}" style="width:100%;height:100%;object-fit:cover"/>` : '🐶'}</div>
       <div>
         <h2 style="font-size:1.75rem;font-weight:800">${dog.name}</h2>
         <p style="color:var(--muted)">${dog.breed||''} · ${dog.total_analyses||0} análisis en total</p>
@@ -573,6 +614,13 @@ function editDog(id) {
   document.getElementById('dogModalBirth').value = d.birth_date?.slice(0,10) || '';
   document.getElementById('dogModalWeight').value = d.weight_kg || '';
   document.getElementById('dogModalNotes').value = d.notes || '';
+  document.getElementById('dogModalPhoto').value = '';
+  const prev = document.getElementById('dogPhotoPreview');
+  if (d.photo_url) {
+    prev.innerHTML = `<img src="${d.photo_url}" style="width:100%;height:100%;object-fit:cover"/>`;
+  } else {
+    prev.innerHTML = '🐶';
+  }
   document.getElementById('dogModal').classList.add('open');
 }
 
@@ -648,6 +696,21 @@ function rowHtml(a, withDog) {
 
 function shareAnalysis(url) {
   navigator.clipboard?.writeText(url).then(() => showToast('🔗 Link copiado al portapapeles'));
+}
+
+// ── VET SHARE ─────────────────────────────────────────────────────────────────
+async function shareWithVet() {
+  try {
+    const r = await fetch('/api/vet/my-token', { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) { showToast('Error al generar enlace'); return; }
+    const { url } = await r.json();
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      showToast('🩺 Enlace copiado — compártelo con tu veterinario o entrenador');
+    } else {
+      prompt('Copia este enlace para tu veterinario:', url);
+    }
+  } catch (e) { showToast('Error: ' + e.message); }
 }
 
 function exportAll() {

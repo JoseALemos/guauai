@@ -486,7 +486,7 @@
       <div class="ob-dot" id="dot2"></div>
     </div>
     <button id="obBtn" onclick="nextOnboard()" style="width:100%;background:#7c3aed;color:white;border:none;border-radius:12px;padding:0.875rem;font-size:1rem;font-weight:700;cursor:pointer">Siguiente →</button>
-    <button onclick="skipOnboard()" style="background:none;border:none;color:#64748b;font-size:0.8rem;cursor:pointer;margin-top:0.75rem;display:block;width:100%">Saltar</button>
+    <button onclick="skipOnboard()" id="obSkipBtn" style="background:none;border:none;color:#64748b;font-size:0.8rem;cursor:pointer;margin-top:0.75rem;display:block;width:100%"></button>
   </div>
 </div>
 
@@ -528,17 +528,17 @@
       <canvas id="waveform"></canvas>
       <div class="timer" id="timer">00:00</div>
       <button class="record-btn" id="recordBtn" title="Grabar">🎙️</button>
-      <p class="status-label" id="statusLabel">Pulsa para grabar el sonido de tu perro</p>
+      <p class="status-label" id="statusLabel"></p>
     </div>
   </div>
 
   <!-- BOTÓN ANALIZAR -->
-  <button class="analyze-btn" id="analyzeBtn">🔍 Analizar lo que dice</button>
+  <button class="analyze-btn" id="analyzeBtn"></button>
 
   <!-- LOADER -->
   <div class="loader card" id="loader">
     <div class="spinner"></div>
-    <p>Analizando vocalizaciones...</p>
+    <p id="loaderText"></p>
   </div>
 
   <!-- ERROR -->
@@ -549,7 +549,7 @@
 
   <!-- HISTORIAL -->
   <div class="card" id="historyCard" style="display:none">
-    <div class="history-title">Historial de la sesión</div>
+    <div class="history-title" id="historyTitle"></div>
     <div id="historyList"></div>
   </div>
 
@@ -563,7 +563,106 @@
 
 <script>
 const API_BASE = '/api';
-const LANG = navigator.language?.slice(0,2) || 'es'; // auto-detect: es, en, de...
+const LANG = navigator.language?.slice(0,2) || 'es'; // auto-detect: es, en, pt, de...
+
+// ── i18n ──────────────────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  es: {
+    idle: 'Pulsa para grabar el sonido de tu perro',
+    recording: 'Grabando... pulsa para detener',
+    ready: s => `Audio listo (${s}) — pulsa analizar`,
+    analyze: '🔍 Analizar lo que dice',
+    analyzing: 'Analizando vocalizaciones...',
+    try_again: '🔄 Grabar de nuevo',
+    export_csv: '📥 Exportar CSV',
+    history_title: 'Historial de la sesión',
+    dog_placeholder: '🐶 Nombre del perro',
+    breed_placeholder: 'Raza (opcional)',
+    no_dog_opt: 'Sin perro asociado',
+    label_need: 'Necesidad', label_vocal: 'Vocalización', label_inten: 'Intensidad', label_conf: 'Confianza IA',
+    banner_save: 'Guarda tu historial y estadísticas',
+    banner_cta: 'Crear cuenta gratis →',
+    banner_dash: 'Ir al dashboard →',
+    onboard: [
+      { emoji:'🎤', title:'Graba a tu perro', text:'Pulsa el botón central y graba cualquier sonido — ladrido, gemido, gruñido. Mínimo 2 segundos.' },
+      { emoji:'🧠', title:'IA en tiempo real', text:'GuauAI analiza el audio con el modelo gpt-audio de OpenAI y detecta el estado emocional, necesidad e intensidad.' },
+      { emoji:'📊', title:'Guarda tu historial', text:'Crea una cuenta gratis para guardar todos los análisis, ver estadísticas de comportamiento y recibir alertas.' },
+    ],
+    onboard_next: 'Siguiente →', onboard_start: '¡Empezar! 🐾', onboard_skip: 'Saltar',
+    need: { atención:'Pide atención', juego:'Quiere jugar', comida:'Tiene hambre', agua:'Quiere agua', paseo:'Quiere salir', alarma:'Está alertando', dolor:'Siente dolor', miedo:'Tiene miedo', territorial:'Marcando territorio', sin_necesidad_clara:'Sin necesidad concreta' },
+    no_audio: 'No se detectó audio de perro. Intenta grabar más cerca.',
+    err_mic: 'No se pudo acceder al micrófono: ',
+    err_conn: 'Error de conexión: ',
+  },
+  en: {
+    idle: 'Press to record your dog\'s sound',
+    recording: 'Recording... press to stop',
+    ready: s => `Audio ready (${s}) — press analyze`,
+    analyze: '🔍 Analyze what they said',
+    analyzing: 'Analyzing vocalizations...',
+    try_again: '🔄 Record again',
+    export_csv: '📥 Export CSV',
+    history_title: 'Session history',
+    dog_placeholder: '🐶 Dog name',
+    breed_placeholder: 'Breed (optional)',
+    no_dog_opt: 'No dog linked',
+    label_need: 'Need', label_vocal: 'Vocalization', label_inten: 'Intensity', label_conf: 'AI Confidence',
+    banner_save: 'Save your history and stats',
+    banner_cta: 'Create free account →',
+    banner_dash: 'Go to dashboard →',
+    onboard: [
+      { emoji:'🎤', title:'Record your dog', text:'Press the button and record any sound — bark, whine, growl. Minimum 2 seconds.' },
+      { emoji:'🧠', title:'Real-time AI', text:'GuauAI analyzes the audio with OpenAI\'s gpt-audio model and detects emotional state, need and intensity.' },
+      { emoji:'📊', title:'Save your history', text:'Create a free account to save all analyses, view behavior stats and receive alerts.' },
+    ],
+    onboard_next: 'Next →', onboard_start: 'Get started! 🐾', onboard_skip: 'Skip',
+    need: { atención:'Wants attention', juego:'Wants to play', comida:'Hungry', agua:'Wants water', paseo:'Wants a walk', alarma:'Alerting', dolor:'In pain', miedo:'Afraid', territorial:'Marking territory', sin_necesidad_clara:'No clear need' },
+    no_audio: 'No dog audio detected. Try recording closer.',
+    err_mic: 'Microphone access denied: ',
+    err_conn: 'Connection error: ',
+  },
+  pt: {
+    idle: 'Pressione para gravar o som do seu cão',
+    recording: 'Gravando... pressione para parar',
+    ready: s => `Áudio pronto (${s}) — pressione analisar`,
+    analyze: '🔍 Analisar o que ele disse',
+    analyzing: 'Analisando vocalizações...',
+    try_again: '🔄 Gravar novamente',
+    export_csv: '📥 Exportar CSV',
+    history_title: 'Histórico da sessão',
+    dog_placeholder: '🐶 Nome do cão',
+    breed_placeholder: 'Raça (opcional)',
+    no_dog_opt: 'Sem cão associado',
+    label_need: 'Necessidade', label_vocal: 'Vocalização', label_inten: 'Intensidade', label_conf: 'Confiança IA',
+    banner_save: 'Salve seu histórico e estatísticas',
+    banner_cta: 'Criar conta grátis →',
+    banner_dash: 'Ir ao painel →',
+    onboard: [
+      { emoji:'🎤', title:'Grave seu cão', text:'Pressione o botão e grave qualquer som — latido, gemido, rosnado. Mínimo 2 segundos.' },
+      { emoji:'🧠', title:'IA em tempo real', text:'GuauAI analisa o áudio com o modelo gpt-audio da OpenAI e detecta o estado emocional, necessidade e intensidade.' },
+      { emoji:'📊', title:'Salve seu histórico', text:'Crie uma conta grátis para salvar todas as análises, ver estatísticas e receber alertas.' },
+    ],
+    onboard_next: 'Próximo →', onboard_start: 'Começar! 🐾', onboard_skip: 'Pular',
+    need: { atención:'Quer atenção', juego:'Quer brincar', comida:'Com fome', agua:'Quer água', paseo:'Quer passear', alarma:'Alerta', dolor:'Com dor', miedo:'Com medo', territorial:'Marcando território', sin_necesidad_clara:'Sem necessidade clara' },
+    no_audio: 'Nenhum áudio de cão detectado. Tente gravar mais perto.',
+    err_mic: 'Acesso ao microfone negado: ',
+    err_conn: 'Erro de conexão: ',
+  },
+};
+const i18n = TRANSLATIONS[LANG] || TRANSLATIONS.en;
+
+// Aplicar traducciones estáticas al cargar
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('statusLabel').textContent = i18n.idle;
+  document.getElementById('analyzeBtn').textContent = i18n.analyze;
+  document.getElementById('loaderText').textContent = i18n.analyzing;
+  const ht = document.getElementById('historyTitle');
+  if (ht) ht.textContent = i18n.history_title;
+  const skip = document.getElementById('obSkipBtn');
+  if (skip) skip.textContent = i18n.onboard_skip;
+  document.getElementById('dogName').placeholder = i18n.dog_placeholder;
+  document.getElementById('dogBreed').placeholder = i18n.breed_placeholder;
+});
 const recordBtn = document.getElementById('recordBtn');
 const analyzeBtn = document.getElementById('analyzeBtn');
 const timerEl = document.getElementById('timer');
@@ -690,7 +789,7 @@ async function startRecording() {
     // UI
     recordBtn.textContent = '⏹️';
     recordBtn.classList.add('recording');
-    statusLabel.textContent = 'Grabando... pulsa para detener';
+    statusLabel.textContent = i18n.recording;
     analyzeBtn.classList.remove('visible');
     resultEl.classList.remove('visible');
     errorEl.classList.remove('visible');
@@ -704,7 +803,7 @@ async function startRecording() {
     }, 1000);
 
   } catch (err) {
-    showError('No se pudo acceder al micrófono: ' + err.message);
+    showError(i18n.err_mic + err.message);
   }
 }
 
@@ -717,10 +816,10 @@ function stopRecording() {
   recordBtn.classList.remove('recording');
   timerEl.classList.remove('recording');
   if (seconds > 0) {
-    statusLabel.textContent = `Audio listo (${formatTime(seconds)}) — pulsa analizar`;
+    statusLabel.textContent = i18n.ready(formatTime(seconds));
     analyzeBtn.classList.add('visible');
   } else {
-    statusLabel.textContent = 'Pulsa para grabar el sonido de tu perro';
+    statusLabel.textContent = i18n.idle;
   }
 }
 
@@ -764,7 +863,7 @@ analyzeBtn.addEventListener('click', async () => {
 
       const data = await res.json();
       if (data.analysis?.error) {
-        showError('No se detectó audio de perro. Intenta grabar más cerca.');
+        showError(i18n.no_audio);
         return;
       }
 
@@ -776,7 +875,7 @@ analyzeBtn.addEventListener('click', async () => {
   } catch (err) {
     loaderEl.classList.remove('visible');
     analyzeBtn.disabled = false;
-    showError('Error de conexión: ' + err.message);
+    showError(i18n.err_conn + err.message);
   }
 });
 
@@ -787,12 +886,7 @@ const EMOTION_EMOJI = {
   frustrado: '😤', feliz: '😄'
 };
 
-const NEED_LABEL = {
-  atención: 'Pide atención', juego: 'Quiere jugar', comida: 'Tiene hambre',
-  agua: 'Quiere agua', paseo: 'Quiere salir', alarma: 'Está alertando',
-  dolor: 'Siente dolor', miedo: 'Tiene miedo', territorial: 'Marcando territorio',
-  sin_necesidad_clara: 'Sin necesidad concreta'
-};
+const NEED_LABEL = i18n.need;
 
 function renderResult(data) {
   const a = data.analysis;
@@ -809,19 +903,19 @@ function renderResult(data) {
 
     <div class="meta-grid">
       <div class="meta-item">
-        <div class="label">Necesidad</div>
+        <div class="label">${i18n.label_need}</div>
         <div class="value">${NEED_LABEL[a.necesidad] || a.necesidad || '—'}</div>
       </div>
       <div class="meta-item">
-        <div class="label">Vocalización</div>
+        <div class="label">${i18n.label_vocal}</div>
         <div class="value">${a.tipo_vocalizacion || '—'}</div>
       </div>
       <div class="meta-item">
-        <div class="label">Intensidad</div>
+        <div class="label">${i18n.label_inten}</div>
         <div class="value">${a.intensidad?.toUpperCase() || '—'}</div>
       </div>
       <div class="meta-item">
-        <div class="label">Confianza IA</div>
+        <div class="label">${i18n.label_conf}</div>
         <div class="value">${conf}%</div>
         <div class="confidence-bar">
           <div class="confidence-fill" style="width:${conf}%"></div>
@@ -835,7 +929,7 @@ function renderResult(data) {
       <span>${a.recomendacion_dueno}</span>
     </div>` : ''}
 
-    <button class="try-again-btn" onclick="resetRecorder()">🔄 Grabar de nuevo</button>
+    <button class="try-again-btn" onclick="resetRecorder()">${i18n.try_again}</button>
   `;
   resultEl.classList.add('visible');
 }
@@ -870,7 +964,7 @@ function renderHistory() {
     </div>
   `).join('') + `
     <button class="try-again-btn" onclick="exportHistory()" style="margin-top:0.75rem">
-      📥 Exportar CSV
+      ${i18n.export_csv}
     </button>
   `;
 }
@@ -885,7 +979,7 @@ function resetRecorder() {
   recordedBlob = null;
   seconds = 0;
   timerEl.textContent = '00:00';
-  statusLabel.textContent = 'Pulsa para grabar el sonido de tu perro';
+  statusLabel.textContent = i18n.idle;
   analyzeBtn.classList.remove('visible');
   resultEl.classList.remove('visible');
   errorEl.classList.remove('visible');
@@ -938,7 +1032,7 @@ async function initAuthBanner() {
       if (r.ok) {
         const u = await r.json();
         currentUserId = u.id;
-        banner.innerHTML = `<span>👋 ${u.name || u.email}</span><a href="/dashboard" style="color:var(--accent2);font-weight:700;text-decoration:none">Ir al dashboard →</a>`;
+        banner.innerHTML = `<span>👋 ${u.name || u.email}</span><a href="/dashboard" style="color:var(--accent2);font-weight:700;text-decoration:none">${i18n.banner_dash}</a>`;
         banner.style.background = '#0d0d1a';
         // cargar perros del usuario para el selector
         loadUserDogs();
@@ -946,7 +1040,7 @@ async function initAuthBanner() {
       }
     } catch {}
   }
-  banner.innerHTML = `<span>Guarda tu historial y estadísticas</span><a href="/dashboard" style="background:var(--accent);color:white;padding:.35rem .9rem;border-radius:8px;font-weight:700;text-decoration:none;font-size:.8rem">Crear cuenta gratis →</a>`;
+  banner.innerHTML = `<span>${i18n.banner_save}</span><a href="/dashboard" style="background:var(--accent);color:white;padding:.35rem .9rem;border-radius:8px;font-weight:700;text-decoration:none;font-size:.8rem">${i18n.banner_cta}</a>`;
 }
 
 async function loadUserDogs() {
@@ -957,7 +1051,7 @@ async function loadUserDogs() {
     const dogs = await r.json();
     const sel = document.getElementById('dogSelector');
     if (!sel || !dogs.length) return;
-    sel.innerHTML = '<option value="">Sin perro asociado</option>' + dogs.map(d => `<option value="${d.id}" data-breed="${d.breed||''}">${d.name}${d.breed ? ' (' + d.breed + ')' : ''}</option>`).join('');
+    sel.innerHTML = `<option value="">${i18n.no_dog_opt}</option>` + dogs.map(d => `<option value="${d.id}" data-breed="${d.breed||''}">${d.name}${d.breed ? ' (' + d.breed + ')' : ''}</option>`).join('');
     sel.style.display = 'block';
     sel.addEventListener('change', () => {
       const opt = sel.options[sel.selectedIndex];
@@ -985,11 +1079,7 @@ async function saveAnalysisToDB(dogId, analysisData) {
 initAuthBanner();
 
 // ── ONBOARDING ────────────────────────────────────────────────────
-const OB_STEPS = [
-  { emoji:'🎤', title:'Graba a tu perro', text:'Pulsa el botón central y graba cualquier sonido — ladrido, gemido, gruñido. Mínimo 2 segundos.' },
-  { emoji:'🧠', title:'IA en tiempo real', text:'GuauAI analiza el audio con el modelo gpt-audio de OpenAI y detecta el estado emocional, necesidad e intensidad.' },
-  { emoji:'📊', title:'Guarda tu historial', text:'Crea una cuenta gratis para guardar todos los análisis, ver estadísticas de comportamiento y recibir alertas.' },
-];
+const OB_STEPS = i18n.onboard;
 let obStep = 0;
 
 function renderOnboardStep() {
@@ -999,7 +1089,7 @@ function renderOnboardStep() {
     <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:.75rem">${s.title}</h2>
     <p style="color:#94a3b8;font-size:.95rem;line-height:1.6">${s.text}</p>`;
   document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('active', i === obStep));
-  document.getElementById('obBtn').textContent = obStep === OB_STEPS.length - 1 ? '¡Empezar! 🐾' : 'Siguiente →';
+  document.getElementById('obBtn').textContent = obStep === OB_STEPS.length - 1 ? i18n.onboard_start : i18n.onboard_next;
 }
 
 function nextOnboard() {

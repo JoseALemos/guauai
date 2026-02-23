@@ -30,6 +30,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/dogs', require('./routes/dogRoutes'));
 app.use('/api/share', require('./routes/shareRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/vet', require('./routes/vetRoutes'));
 
 // Ruta de alertas inline
 app.get('/api/alerts', require('./middleware/auth').verifyToken, async (req, res) => {
@@ -55,6 +56,11 @@ app.get('/admin', (req, res) => {
 // Share — análisis públicos
 app.get('/share/:id', (req, res) => {
   res.sendFile(path.join(staticDir, 'share.html'));
+});
+
+// Vet dashboard — informe veterinario/entrenador
+app.get('/vet/:token', (req, res) => {
+  res.sendFile(path.join(staticDir, 'vet.html'));
 });
 
 // Fallback al frontend
