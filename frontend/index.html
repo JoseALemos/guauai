@@ -472,7 +472,20 @@
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
       footer { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); }
     }
-  </style>
+  
+  /* PWA install prompt */
+  #pwaPrompt {
+    display: none; position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+    background: #1e1e30; border: 1px solid #7c3aed; border-radius: 1rem;
+    padding: .875rem 1.5rem; box-shadow: 0 8px 32px rgba(124,58,237,.35);
+    z-index: 9999; align-items: center; gap: 1rem; max-width: 360px; width: calc(100% - 2rem);
+  }
+  #pwaPrompt .pwa-text { font-size: .875rem; color: #e2e8f0; flex: 1; }
+  #pwaPrompt .pwa-text strong { color: #a855f7; display: block; font-size: .9rem; }
+  #pwaPrompt .pwa-install { background: #7c3aed; color: #fff; border: none; border-radius: .625rem;
+    padding: .5rem 1rem; font-weight: 700; font-size: .85rem; cursor: pointer; white-space: nowrap; }
+  #pwaPrompt .pwa-dismiss { background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.1rem; padding: .25rem; }
+</style>
 </head>
 <body>
 
@@ -1107,6 +1120,35 @@ if (!localStorage.getItem('guauai_onboarded')) {
   renderOnboardStep();
   document.getElementById('onboarding').style.display = 'flex';
 }
+</script>
+
+<div id="pwaPrompt">
+  <div class="pwa-text"><strong>📲 Instalar GuauAI</strong>Acceso directo desde tu móvil, sin navegador</div>
+  <button class="pwa-install" onclick="installPWA()">Instalar</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()" aria-label="Cerrar">✕</button>
+</div>
+<script>
+// ── PWA Install Prompt ────────────────────────────────────────────────────
+let _pwaPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  const el = document.getElementById('pwaPrompt');
+  if (el && localStorage.getItem('pwa_dismissed') !== '1') {
+    setTimeout(() => { el.style.display = 'flex'; }, 3000);
+  }
+});
+window.installPWA = async function() {
+  if (!_pwaPrompt) return;
+  _pwaPrompt.prompt();
+  const { outcome } = await _pwaPrompt.userChoice;
+  document.getElementById('pwaPrompt').style.display = 'none';
+  _pwaPrompt = null;
+};
+window.dismissPWA = function() {
+  document.getElementById('pwaPrompt').style.display = 'none';
+  localStorage.setItem('pwa_dismissed', '1');
+};
 </script>
 </body>
 </html>

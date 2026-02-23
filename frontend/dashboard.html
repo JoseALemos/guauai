@@ -261,7 +261,20 @@
     .try-btn { width:100%; background:transparent; border:1px solid var(--border); border-radius:100px; padding:.7rem; color:var(--muted); font-weight:600; font-size:.875rem; cursor:pointer; transition:border-color .2s,color .2s; }
     .try-btn:hover { border-color:var(--purple); color:var(--purple2); }
     @media (max-width:480px) { .rec-meta { grid-template-columns:1fr; } }
-  </style>
+  
+  /* PWA install prompt */
+  #pwaPrompt {
+    display: none; position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+    background: #1e1e30; border: 1px solid #7c3aed; border-radius: 1rem;
+    padding: .875rem 1.5rem; box-shadow: 0 8px 32px rgba(124,58,237,.35);
+    z-index: 9999; align-items: center; gap: 1rem; max-width: 360px; width: calc(100% - 2rem);
+  }
+  #pwaPrompt .pwa-text { font-size: .875rem; color: #e2e8f0; flex: 1; }
+  #pwaPrompt .pwa-text strong { color: #a855f7; display: block; font-size: .9rem; }
+  #pwaPrompt .pwa-install { background: #7c3aed; color: #fff; border: none; border-radius: .625rem;
+    padding: .5rem 1rem; font-weight: 700; font-size: .85rem; cursor: pointer; white-space: nowrap; }
+  #pwaPrompt .pwa-dismiss { background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.1rem; padding: .25rem; }
+</style>
 </head>
 <body>
 
@@ -270,23 +283,23 @@
   <div class="auth-card">
     <div class="auth-logo">
       <h1>Guau<span>AI</span> 🐾</h1>
-      <p>Habla con tu perro</p>
+      <p data-i18n="d_tagline">Habla con tu perro</p>
     </div>
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchTab('login')">Entrar</button>
-      <button class="auth-tab" onclick="switchTab('register')">Registrarse</button>
+      <button class="auth-tab active" onclick="switchTab('login')" data-i18n="d_login">Entrar</button>
+      <button class="auth-tab" onclick="switchTab('register')" data-i18n="d_register">Registrarse</button>
     </div>
     <div id="authError" class="auth-error"></div>
     <div id="formLogin">
-      <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"/></div>
-      <div class="field"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••••"/></div>
-      <button class="btn-primary" onclick="login()">Entrar →</button>
+      <div class="field"><label data-i18n="d_email">Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"/></div>
+      <div class="field"><label data-i18n="d_pass">Contraseña</label><input type="password" id="loginPass" placeholder="••••••••"/></div>
+      <button class="btn-primary" onclick="login()" data-i18n="d_login_btn">Entrar →</button>
     </div>
     <div id="formRegister" style="display:none">
-      <div class="field"><label>Nombre</label><input type="text" id="regName" placeholder="Tu nombre"/></div>
-      <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="tu@email.com"/></div>
-      <div class="field"><label>Contraseña</label><input type="password" id="regPass" placeholder="Mínimo 6 caracteres"/></div>
-      <button class="btn-primary" onclick="register()">Crear cuenta →</button>
+      <div class="field"><label data-i18n="d_name">Nombre</label><input type="text" id="regName" placeholder="Tu nombre"/></div>
+      <div class="field"><label data-i18n="d_email">Email</label><input type="email" id="regEmail" placeholder="tu@email.com"/></div>
+      <div class="field"><label data-i18n="d_pass">Contraseña</label><input type="password" id="regPass" placeholder="Mínimo 6 caracteres"/></div>
+      <button class="btn-primary" onclick="register()" data-i18n="d_reg_btn">Crear cuenta →</button>
     </div>
   </div>
 </div>
@@ -304,18 +317,23 @@
   <div class="sidebar" id="sidebar">
     <div class="sidebar-logo"><h1>Guau<span>AI</span></h1></div>
     <nav>
-      <a href="#" class="active" data-page="overview" onclick="navigate('overview',this)">📊 <span>Resumen</span></a>
-      <a href="#" data-page="dogs" onclick="navigate('dogs',this)">🐶 <span>Mis Perros</span></a>
-      <a href="#" data-page="analyzer" onclick="navigate('analyzer',this)">🎤 <span>Analizar</span></a>
-      <a href="#" data-page="history" onclick="navigate('history',this)">📋 <span>Historial</span></a>
-      <a href="#" data-page="alerts" onclick="navigate('alerts',this)">🔔 <span>Alertas</span></a>
+      <a href="#" class="active" data-page="overview" onclick="navigate('overview',this)">📊 <span data-i18n="d_nav_overview">Resumen</span></a>
+      <a href="#" data-page="dogs" onclick="navigate('dogs',this)">🐶 <span data-i18n="d_nav_dogs">Mis Perros</span></a>
+      <a href="#" data-page="analyzer" onclick="navigate('analyzer',this)">🎤 <span data-i18n="d_nav_analyze">Analizar</span></a>
+      <a href="#" data-page="history" onclick="navigate('history',this)">📋 <span data-i18n="d_nav_history">Historial</span></a>
+      <a href="#" data-page="alerts" onclick="navigate('alerts',this)">🔔 <span data-i18n="d_nav_alerts">Alertas</span></a>
     </nav>
     <div class="sidebar-footer">
+      <div class="lang-switcher" style="display:flex;gap:.35rem;margin-bottom:.75rem">
+        <button onclick="setLang('es')" id="langEs" style="background:none;border:1px solid var(--border);border-radius:.5rem;padding:.3rem .55rem;font-size:.85rem;cursor:pointer;opacity:.5">🇪🇸</button>
+        <button onclick="setLang('en')" id="langEn" style="background:none;border:1px solid var(--border);border-radius:.5rem;padding:.3rem .55rem;font-size:.85rem;cursor:pointer;opacity:.5">🇬🇧</button>
+        <button onclick="setLang('pt')" id="langPt" style="background:none;border:1px solid var(--border);border-radius:.5rem;padding:.3rem .55rem;font-size:.85rem;cursor:pointer;opacity:.5">🇵🇹</button>
+      </div>
       <div class="user-pill">
         <div class="user-avatar" id="userAvatar">?</div>
         <div class="user-name" id="userName"></div>
       </div>
-      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+      <button class="btn-logout" onclick="logout()" data-i18n="d_logout">Cerrar sesión</button>
     </div>
   </div>
 
@@ -323,18 +341,18 @@
     <!-- OVERVIEW -->
     <div class="page active" id="page-overview">
       <div class="page-header">
-        <h2>Resumen</h2>
-        <button class="btn-sm btn-outline" onclick="shareWithVet()" title="Generar enlace para veterinario o entrenador">🩺 Compartir con vet</button>
+        <h2 data-i18n="d_nav_overview">Resumen</h2>
+        <button class="btn-sm btn-outline" onclick="shareWithVet()" title="Generar enlace para veterinario o entrenador">🩺 <span data-i18n="d_share_vet">Compartir con vet</span></button>
       </div>
       <div class="cards">
-        <div class="card"><div class="card-label">Perros</div><div class="card-value" id="totalDogs">—</div></div>
-        <div class="card"><div class="card-label">Análisis totales</div><div class="card-value" id="totalAnalyses">—</div></div>
-        <div class="card"><div class="card-label">Emoción frecuente</div><div class="card-value" id="topEmotion" style="font-size:1.25rem">—</div></div>
-        <div class="card"><div class="card-label">Último análisis</div><div class="card-value" id="lastAnalysis" style="font-size:1rem">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="d_stat_dogs">Perros</div><div class="card-value" id="totalDogs">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="d_stat_analyses">Análisis totales</div><div class="card-value" id="totalAnalyses">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="d_stat_emotion">Emoción frecuente</div><div class="card-value" id="topEmotion" style="font-size:1.25rem">—</div></div>
+        <div class="card"><div class="card-label" data-i18n="d_stat_last">Último análisis</div><div class="card-value" id="lastAnalysis" style="font-size:1rem">—</div></div>
       </div>
       <div class="charts-grid">
-        <div class="chart-card"><h4>Emociones (30 días)</h4><div style="position:relative;height:200px"><canvas id="chartEmotions"></canvas></div></div>
-        <div class="chart-card"><h4>Actividad diaria</h4><div style="position:relative;height:200px"><canvas id="chartTimeline"></canvas></div></div>
+        <div class="chart-card"><h4 data-i18n="d_chart_emotions">Emociones (30 días)</h4><div style="position:relative;height:200px"><canvas id="chartEmotions"></canvas></div></div>
+        <div class="chart-card"><h4 data-i18n="d_chart_activity">Actividad diaria</h4><div style="position:relative;height:200px"><canvas id="chartTimeline"></canvas></div></div>
       </div>
       <div id="overviewDogList"></div>
     </div>
@@ -342,17 +360,17 @@
     <!-- DOGS -->
     <div class="page" id="page-dogs">
       <div class="page-header">
-        <h2>Mis Perros</h2>
-        <button class="btn-sm" onclick="openAddDog()">+ Añadir perro</button>
+        <h2 data-i18n="d_nav_dogs">Mis Perros</h2>
+        <button class="btn-sm" onclick="openAddDog()" data-i18n="d_add_dog">+ Añadir perro</button>
       </div>
       <div class="dog-grid" id="dogGrid">
-        <div class="add-dog-card" onclick="openAddDog()"><span>🐾</span>Añadir perro</div>
+        <div class="add-dog-card" onclick="openAddDog()"><span>🐾</span><span data-i18n="d_add_dog_card">Añadir perro</span></div>
       </div>
     </div>
 
     <!-- DOG DETAIL (pseudo-page dentro de dogs) -->
     <div class="page" id="page-dogdetail">
-      <div class="back-btn" onclick="navigate('dogs',null)">← Volver a Mis Perros</div>
+      <div class="back-btn" onclick="navigate('dogs',null)" data-i18n="d_back_dogs">← Volver a Mis Perros</div>
       <div id="dogDetailHeader"></div>
       <div class="charts-grid" id="dogDetailCharts"></div>
       <div class="card" style="overflow:auto">
@@ -365,13 +383,13 @@
 
     <!-- ANALYZER -->
     <div class="page" id="page-analyzer">
-      <div class="page-header"><h2>Analizar Sonido</h2></div>
+      <div class="page-header"><h2 data-i18n="d_nav_analyze_title">Analizar Sonido</h2></div>
       <div class="rec-wrap">
         <!-- Selector de perro -->
         <div class="card" style="margin-bottom:1rem">
           <div class="field"><label>Perro</label>
             <select id="analyzerDog" style="width:100%;padding:.75rem 1rem;background:var(--bg3);border:1px solid var(--border);border-radius:.75rem;color:var(--text);font-size:.95rem;outline:none">
-              <option value="">Sin asociar</option>
+              <option value="" data-i18n="d_no_dog">Sin asociar</option>
             </select>
           </div>
         </div>
@@ -382,16 +400,16 @@
           <div class="rec-controls">
             <div class="rec-timer" id="recTimer">00:00</div>
             <button class="rec-btn" id="recBtn" title="Grabar">🎙️</button>
-            <p class="rec-status" id="recStatus">Pulsa para grabar el sonido de tu perro</p>
+            <p class="rec-status" id="recStatus" data-i18n="d_rec_idle">Pulsa para grabar el sonido de tu perro</p>
           </div>
         </div>
 
-        <button class="rec-analyze-btn" id="recAnalyzeBtn">🔍 Analizar lo que dice</button>
+        <button class="rec-analyze-btn" id="recAnalyzeBtn" data-i18n="d_rec_analyze">🔍 Analizar lo que dice</button>
 
         <!-- Loader -->
         <div class="rec-loader card" id="recLoader" style="margin-top:.75rem">
           <div class="rec-spinner"></div>
-          <span style="color:var(--muted);font-size:.85rem">Analizando vocalizaciones...</span>
+          <span style="color:var(--muted);font-size:.85rem" data-i18n="d_rec_loading">Analizando vocalizaciones...</span>
         </div>
 
         <!-- Error -->
@@ -405,8 +423,8 @@
     <!-- HISTORY -->
     <div class="page" id="page-history">
       <div class="page-header">
-        <h2>Historial completo</h2>
-        <button class="btn-sm btn-outline" onclick="exportAll()">📥 Exportar CSV</button>
+        <h2 data-i18n="d_nav_history_title">Historial completo</h2>
+        <button class="btn-sm btn-outline" onclick="exportAll()" data-i18n="d_export">📥 Exportar CSV</button>
       </div>
       <div class="card" style="overflow:auto">
         <table class="history-table" id="historyTable">
@@ -417,7 +435,7 @@
     </div>
     <!-- ALERTS -->
     <div class="page" id="page-alerts">
-      <div class="page-header"><h2>🔔 Alertas de Comportamiento</h2></div>
+      <div class="page-header"><h2 data-i18n="d_nav_alerts_title">🔔 Alertas de Comportamiento</h2></div>
       <div id="alertsList">
         <div class="empty"><span>🔔</span><p style="color:var(--muted)">Cargando alertas...</p></div>
       </div>
@@ -885,7 +903,7 @@ async function loadAlerts() {
       mrec.onstop = () => { blob = new Blob(chunks,{type:'audio/webm'}); stream.getTracks().forEach(t=>t.stop()); cancelAnimationFrame(animId); drawIdle(); };
       mrec.start(100);
       recBtn.textContent = '⏹️'; recBtn.classList.add('recording');
-      recStatus.textContent = 'Grabando... pulsa para detener';
+      recStatus.textContent = (DASH_TRANSLATIONS[localStorage.getItem('guauai_lang')||navigator.language?.slice(0,2)||'es']||DASH_TRANSLATIONS.en).d_rec_recording || 'Grabando...';
       recAnalyzeBtn.classList.remove('visible'); recResult.classList.remove('visible');
       recError.classList.remove('visible');
       secs = 0; recTimer.textContent = '00:00'; recTimer.classList.add('recording');
@@ -898,8 +916,8 @@ async function loadAlerts() {
     clearInterval(timerIv);
     recBtn.textContent = '🎙️'; recBtn.classList.remove('recording');
     recTimer.classList.remove('recording');
-    if (secs>0) { recStatus.textContent = `Audio listo (${fmt(secs)}) — pulsa analizar`; recAnalyzeBtn.classList.add('visible'); }
-    else { recStatus.textContent = 'Pulsa para grabar el sonido de tu perro'; }
+    if (secs>0) { const _tR=(DASH_TRANSLATIONS[localStorage.getItem('guauai_lang')||navigator.language?.slice(0,2)||'es']||DASH_TRANSLATIONS.en); recStatus.textContent = `${_tR.d_rec_ready||'Audio listo'} (${fmt(secs)})`; recAnalyzeBtn.classList.add('visible'); }
+    else { const _ti=(DASH_TRANSLATIONS[localStorage.getItem('guauai_lang')||navigator.language?.slice(0,2)||'es']||DASH_TRANSLATIONS.en); recStatus.textContent = _ti.d_rec_idle; }
   }
 
   if (recAnalyzeBtn) recAnalyzeBtn.addEventListener('click', async () => {
@@ -942,13 +960,13 @@ async function loadAlerts() {
       <div class="emo-badge">${emoji} ${(a.estado_emocional||'').toUpperCase()}</div>
       <div class="msg-bubble"><p>"${a.mensaje_interpretado||'...'}"</p></div>
       <div class="rec-meta">
-        <div class="rec-meta-item"><div class="lbl">Necesidad</div><div class="val">${a.necesidad||'—'}</div></div>
-        <div class="rec-meta-item"><div class="lbl">Vocalización</div><div class="val">${a.tipo_vocalizacion||'—'}</div></div>
-        <div class="rec-meta-item"><div class="lbl">Intensidad</div><div class="val">${(a.intensidad||'—').toUpperCase()}</div></div>
-        <div class="rec-meta-item"><div class="lbl">Confianza</div><div class="val">${conf}%</div><div class="conf-bar"><div class="conf-fill" style="width:${conf}%"></div></div></div>
+        <div class="rec-meta-item"><div class="lbl">${(DASH_TRANSLATIONS[localStorage.getItem('guauai_lang')||navigator.language?.slice(0,2)||'es']||DASH_TRANSLATIONS.en).d_label_need||'Necesidad'}</div><div class="val">${a.necesidad||'—'}</div></div>
+        <div class="rec-meta-item"><div class="lbl">${(DASH_TRANSLATIONS[localStorage.getItem('guauai_lang')||navigator.language?.slice(0,2)||'es']||DASH_TRANSLATIONS.en).d_label_vocal||'Vocalización'}</div><div class="val">${a.tipo_vocalizacion||'—'}</div></div>
+        <div class="rec-meta-item"><div class="lbl">${(DASH_TRANSLATIONS[localStorage.getItem('guauai_lang')||navigator.language?.slice(0,2)||'es']||DASH_TRANSLATIONS.en).d_label_inten||'Intensidad'}</div><div class="val">${(a.intensidad||'—').toUpperCase()}</div></div>
+        <div class="rec-meta-item"><div class="lbl">${(DASH_TRANSLATIONS[localStorage.getItem('guauai_lang')||navigator.language?.slice(0,2)||'es']||DASH_TRANSLATIONS.en).d_label_conf||'Confianza'}</div><div class="val">${conf}%</div><div class="conf-bar"><div class="conf-fill" style="width:${conf}%"></div></div></div>
       </div>
       ${a.recomendacion_dueno ? `<div class="rec-reco"><span>💡</span><span>${a.recomendacion_dueno}</span></div>` : ''}
-      <button class="try-btn" onclick="recReset()">🔄 Grabar de nuevo</button>`;
+      <button class="try-btn" onclick="recReset()">🔄 ${ (DASH_TRANSLATIONS[localStorage.getItem('guauai_lang')||navigator.language?.slice(0,2)||'es']||DASH_TRANSLATIONS.en).d_try_again||'Grabar de nuevo' }</button>`;
     recResult.classList.add('visible');
   }
 
@@ -956,7 +974,7 @@ async function loadAlerts() {
 
   window.recReset = function() {
     blob = null; secs = 0; recTimer.textContent='00:00';
-    recStatus.textContent='Pulsa para grabar el sonido de tu perro';
+    recStatus.textContent=(DASH_TRANSLATIONS[localStorage.getItem('guauai_lang')||navigator.language?.slice(0,2)||'es']||DASH_TRANSLATIONS.en).d_rec_idle;
     recAnalyzeBtn.classList.remove('visible');
     recResult.classList.remove('visible');
     recError.classList.remove('visible');
@@ -988,6 +1006,131 @@ checkTopbar();
 
 // ── INIT ─────────────────────────────────────────────────────────
 if (token) initApp();
+</script>
+
+<div id="pwaPrompt">
+  <div class="pwa-text"><strong>📲 Instalar GuauAI</strong>Acceso directo desde tu móvil, sin navegador</div>
+  <button class="pwa-install" onclick="installPWA()">Instalar</button>
+  <button class="pwa-dismiss" onclick="dismissPWA()" aria-label="Cerrar">✕</button>
+</div>
+<script>
+// ── PWA Install Prompt ────────────────────────────────────────────────────
+let _pwaPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  const el = document.getElementById('pwaPrompt');
+  if (el && localStorage.getItem('pwa_dismissed') !== '1') {
+    setTimeout(() => { el.style.display = 'flex'; }, 3000);
+  }
+});
+window.installPWA = async function() {
+  if (!_pwaPrompt) return;
+  _pwaPrompt.prompt();
+  const { outcome } = await _pwaPrompt.userChoice;
+  document.getElementById('pwaPrompt').style.display = 'none';
+  _pwaPrompt = null;
+};
+window.dismissPWA = function() {
+  document.getElementById('pwaPrompt').style.display = 'none';
+  localStorage.setItem('pwa_dismissed', '1');
+};
+// ── Dashboard i18n ────────────────────────────────────────────────────────
+const DASH_LANG = localStorage.getItem('guauai_lang') || navigator.language?.slice(0,2) || 'es';
+const DASH_TRANSLATIONS = {
+  es: {
+    d_login:'Entrar', d_register:'Registrarse', d_email:'Email', d_pass:'Contraseña',
+    d_name:'Nombre', d_login_btn:'Entrar →', d_reg_btn:'Crear cuenta →', d_logout:'Cerrar sesión',
+    d_nav_overview:'Resumen', d_nav_dogs:'Mis Perros', d_nav_analyze:'Analizar',
+    d_nav_history:'Historial', d_nav_alerts:'Alertas',
+    d_nav_analyze_title:'Analizar Sonido', d_nav_history_title:'Historial completo',
+    d_nav_alerts_title:'🔔 Alertas de Comportamiento',
+    d_stat_dogs:'Perros', d_stat_analyses:'Análisis totales',
+    d_stat_emotion:'Emoción frecuente', d_stat_last:'Último análisis',
+    d_chart_emotions:'Emociones (30 días)', d_chart_activity:'Actividad diaria',
+    d_add_dog:'+ Añadir perro', d_add_dog_card:'Añadir perro',
+    d_back_dogs:'← Volver a Mis Perros', d_export:'📥 Exportar CSV',
+    d_share_vet:'Compartir con vet',
+    d_rec_idle:'Pulsa para grabar el sonido de tu perro',
+    d_rec_analyze:'🔍 Analizar lo que dice', d_rec_loading:'Analizando vocalizaciones...',
+    d_no_dog:'Sin asociar',
+        d_tagline:'Habla con tu perro',
+    d_rec_recording:'Grabando... pulsa para detener',
+    d_rec_ready:'Audio listo',
+    d_try_again:'Grabar de nuevo',
+    d_label_need:'Necesidad', d_label_vocal:'Vocalización', d_label_inten:'Intensidad', d_label_conf:'Confianza',
+  },
+  en: {
+    d_login:'Sign in', d_register:'Sign up', d_email:'Email', d_pass:'Password',
+    d_name:'Name', d_login_btn:'Sign in →', d_reg_btn:'Create account →', d_logout:'Sign out',
+    d_nav_overview:'Overview', d_nav_dogs:'My Dogs', d_nav_analyze:'Analyze',
+    d_nav_history:'History', d_nav_alerts:'Alerts',
+    d_nav_analyze_title:'Analyze Sound', d_nav_history_title:'Full history',
+    d_nav_alerts_title:'🔔 Behavior Alerts',
+    d_stat_dogs:'Dogs', d_stat_analyses:'Total analyses',
+    d_stat_emotion:'Top emotion', d_stat_last:'Last analysis',
+    d_chart_emotions:'Emotions (30 days)', d_chart_activity:'Daily activity',
+    d_add_dog:'+ Add dog', d_add_dog_card:'Add dog',
+    d_back_dogs:'← Back to My Dogs', d_export:'📥 Export CSV',
+    d_share_vet:'Share with vet',
+    d_rec_idle:'Press to record your dog's sound',
+    d_rec_analyze:'🔍 Analyze what they said', d_rec_loading:'Analyzing vocalizations...',
+    d_no_dog:'No dog linked',
+        d_tagline:'Talk to your dog',
+    d_rec_recording:'Recording... press to stop',
+    d_rec_ready:'Audio ready',
+    d_try_again:'Record again',
+    d_label_need:'Need', d_label_vocal:'Vocalization', d_label_inten:'Intensity', d_label_conf:'Confidence',
+  },
+  pt: {
+    d_login:'Entrar', d_register:'Registar', d_email:'Email', d_pass:'Senha',
+    d_name:'Nome', d_login_btn:'Entrar →', d_reg_btn:'Criar conta →', d_logout:'Sair',
+    d_nav_overview:'Resumo', d_nav_dogs:'Meus Cães', d_nav_analyze:'Analisar',
+    d_nav_history:'Histórico', d_nav_alerts:'Alertas',
+    d_nav_analyze_title:'Analisar Som', d_nav_history_title:'Histórico completo',
+    d_nav_alerts_title:'🔔 Alertas de Comportamento',
+    d_stat_dogs:'Cães', d_stat_analyses:'Análises totais',
+    d_stat_emotion:'Emoção frequente', d_stat_last:'Última análise',
+    d_chart_emotions:'Emoções (30 dias)', d_chart_activity:'Atividade diária',
+    d_add_dog:'+ Adicionar cão', d_add_dog_card:'Adicionar cão',
+    d_back_dogs:'← Voltar a Meus Cães', d_export:'📥 Exportar CSV',
+    d_share_vet:'Partilhar com vet',
+    d_rec_idle:'Pressione para gravar o som do seu cão',
+    d_rec_analyze:'🔍 Analisar o que ele disse', d_rec_loading:'Analisando vocalizações...',
+    d_no_dog:'Sem cão associado',
+        d_tagline:'Fale com o seu cão',
+    d_rec_recording:'Gravando... pressione para parar',
+    d_rec_ready:'Áudio pronto',
+    d_try_again:'Gravar novamente',
+    d_label_need:'Necessidade', d_label_vocal:'Vocalização', d_label_inten:'Intensidade', d_label_conf:'Confiança',
+  },
+};
+
+function applyDashI18n(lang) {
+  const t = DASH_TRANSLATIONS[lang] || DASH_TRANSLATIONS.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  // Highlight active lang button
+  ['es','en','pt'].forEach(l => {
+    const btn = document.getElementById('lang'+l.charAt(0).toUpperCase()+l.slice(1));
+    if (btn) btn.style.opacity = l === lang ? '1' : '0.4';
+  });
+  // Update placeholders
+  const loginPass = document.getElementById('loginPass');
+  if (loginPass) loginPass.placeholder = lang === 'en' ? 'Min 6 characters' : lang === 'pt' ? 'Mín 6 caracteres' : '••••••••';
+  const recStatus = document.getElementById('recStatus');
+  if (recStatus && recStatus.getAttribute('data-i18n')) recStatus.textContent = t.d_rec_idle;
+}
+
+window.setLang = function(lang) {
+  localStorage.setItem('guauai_lang', lang);
+  applyDashI18n(lang);
+};
+
+document.addEventListener('DOMContentLoaded', () => applyDashI18n(DASH_LANG));
+
 </script>
 </body>
 </html>
