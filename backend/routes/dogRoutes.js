@@ -118,4 +118,27 @@ router.get('/:id/stats', verifyToken, async (req, res) => {
   }
 });
 
+/** GET /api/dogs/analyses — Todos los análisis del usuario (con nombre de perro) */
+router.get('/analyses', verifyToken, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 200, 500);
+    const dogId = req.query.dog_id || null;
+    const params = [req.user.userId, limit];
+    const dogFilter = dogId ? 'AND a.dog_id = $3' : '';
+    if (dogId) params.push(dogId);
+    const r = await pool.query(
+      `SELECT a.*, d.name AS dog_name
+       FROM analyses a
+       LEFT JOIN dogs d ON d.id = a.dog_id
+       WHERE a.user_id = $1 ${dogFilter}
+       ORDER BY a.created_at DESC LIMIT $2`,
+      params
+    );
+    res.json(r.rows);
+  } catch (e) {
+    console.error('GET /api/dogs/analyses error:', e.message);
+    res.status(500).json({ error: 'Error al obtener historial' });
+  }
+});
+
 module.exports = router;

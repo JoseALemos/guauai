@@ -756,14 +756,18 @@ async function loadOverview() {
 
 // ── HISTORY ─────────────────────────────────────────────────────
 async function loadFullHistory() {
-  const all = await Promise.all(dogs.map(d =>
-    fetch(`${API}/dogs/${d.id}/history?limit=100`, {headers:{Authorization:`Bearer ${token}`}}).then(r=>r.ok?r.json():[]).then(rows=>rows.map(r=>({...r,_dogName:d.name})))
-  ));
-  const flat = all.flat().sort((a,b) => new Date(b.created_at)-new Date(a.created_at));
-  document.getElementById('historyBody').innerHTML = flat.length
-    ? flat.map(a => rowHtml(a, true)).join('')
-    : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">Sin análisis todavía</td></tr>';
-  window._allHistory = flat;
+  try {
+    const r = await fetch(`${API}/dogs/analyses?limit=200`, {headers:{Authorization:`Bearer ${token}`}});
+    const flat = r.ok ? await r.json() : [];
+    // Normalizar campo nombre de perro
+    flat.forEach(a => { if (!a._dogName) a._dogName = a.dog_name || '—'; });
+    document.getElementById('historyBody').innerHTML = flat.length
+      ? flat.map(a => rowHtml(a, true)).join('')
+      : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">Sin análisis todavía</td></tr>';
+    window._allHistory = flat;
+  } catch(e) {
+    console.error('loadFullHistory error:', e);
+  }
 }
 
 function rowHtml(a, withDog) {

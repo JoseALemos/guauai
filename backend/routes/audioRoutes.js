@@ -7,22 +7,24 @@ const { v4: uuidv4 } = require('uuid');
 const { analyzeDogAudio } = require('../services/dogAnalyzer');
 const { optionalToken } = require('../middleware/auth');
 
-// Guardar análisis en DB si hay usuario autenticado
+// Guardar análisis en DB si hay usuario autenticado — devuelve el ID generado por la DB
 async function saveAnalysis(userId, dogId, data) {
-  if (!userId) return;
+  if (!userId) return null;
   try {
     const pool = require('../db/pool');
     const a = data.analysis;
-    await pool.query(
+    const r = await pool.query(
       `INSERT INTO analyses (user_id, dog_id, estado_emocional, necesidad, intensidad, confianza,
        mensaje_interpretado, recomendacion, tipo_vocalizacion, notas_tecnicas, duration_ms, model_used, tokens_used, device)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
       [userId, dogId || null, a.estado_emocional, a.necesidad, a.intensidad, a.confianza,
        a.mensaje_interpretado, a.recomendacion_dueno, a.tipo_vocalizacion, a.notas_tecnicas,
        data.duration_ms, data.model, data.tokens_used, 'web']
     );
+    return r.rows[0]?.id || null;
   } catch (e) {
     console.error('[DB] Error guardando análisis:', e.message);
+    return null;
   }
 }
 
@@ -120,7 +122,9 @@ router.post('/analyze-base64', express.json({ limit: '15mb' }), optionalToken, a
     // Guardar en DB + detectar alertas si hay sesión autenticada
     let alert = null;
     if (req.user?.userId) {
-      await saveAnalysis(req.user.userId, dog_id || null, response);
+      const dbId = await saveAnalysis(req.user.userId, dog_id || null, response);
+      // Usar el ID de la DB para que los links de compartir funcionen
+      if (dbId) response.id = dbId;
       try {
         const { checkForAlerts } = require('../services/alertService');
         alert = await checkForAlerts(req.user.userId, dog_id || null, result.analysis || {});
